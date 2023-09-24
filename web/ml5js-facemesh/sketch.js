@@ -26,11 +26,23 @@ let face={
     y:0,
     z:0,
   },
+  eyeLine:{
+    start:{},
+    end:{},
+  },
+  led:{
+    point:{},
+  }
 };
 
 let state = 'init';//init,search,found
 
 let isoMode = 'diagonal'; //diagonal,top
+
+let eyeLineLength = 5000;
+let ledDistance = 400;
+let ledLength = 1000;
+
 
 const options = {
   flipHorizontal: false, // boolean value for if the video should be flipped, defaults to false
@@ -101,11 +113,11 @@ function mouseClicked() {
     isoCam.lookAt(0, 0, 0);
   }else if(isoMode == "top"){
     isoCam.ortho(-videoWidth/2,videoWidth/2,-videoHeight/2,videoHeight/2,0,10000);
-    isoCam.setPosition(0,-10000,-0.1);
+    isoCam.setPosition(0,-5000,-0.1);
     isoCam.lookAt(0, 0, 0);
   }else if(isoMode == "far"){
     isoCam.ortho(-videoWidth,videoWidth,-videoHeight,videoHeight,0,10000);
-    isoCam.setPosition(0,-10000,-0.1);
+    isoCam.setPosition(0,-5000,-0.1);
     isoCam.lookAt(0, 0, 0);
   }
 }
@@ -263,6 +275,7 @@ function drawIsometricBuffer(){
   drawMesh(isometricBuffer);
   drawCenteredMesh(isometricBuffer);
   drawPoints(isometricBuffer);
+  drawLed(isometricBuffer);
 }
 
 function drawCoordinates(g){
@@ -286,7 +299,6 @@ function drawCoordinates(g){
 }
 
 function drawPoints(g) {
-
   let center = face.headCenter;
   g.fill(127,127,127);
   g.stroke(0,0,0);
@@ -339,6 +351,19 @@ function drawPoint(g,p,size){
   //g.translate(p.x-(videoWidth/2),p.y-(videoHeight/2),p.z);
   g.translate(p.x,p.y,p.z);
   g.box(size);
+  g.pop(); 
+}
+
+function drawLed(g) {
+  g.fill(255,255,255);
+  g.stroke(0,0,0);
+
+  g.push();
+  //g.translate(p.x-(videoWidth/2),p.y-(videoHeight/2),p.z);
+  g.translate(0,0,ledDistance);
+  //g.rotateX(90);
+  //g.plane(ledLength,ledLength/10);
+  g.box(ledLength,ledLength/10,1);
   g.pop(); 
 }
 
