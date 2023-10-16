@@ -308,8 +308,10 @@ function drawPoints(g) {
     g.rotateY(face.direction);
     g.push();
       g.rotateZ(degToRad(-90));
-      g.translate(0,62.5,0);
-      g.cone(25,25,4,1);//radius,height,segmentsX, segmentsY=1
+      //g.translate(0,62.5,0);
+      g.translate(0,500,0);
+      //g.cone(25,25,4,1);//radius,height,segmentsX, segmentsY=1
+      g.cone(25,1000,4,1);//radius,height,segmentsX, segmentsY=1
     g.pop(); 
     //g.box(50);
   g.pop(); 
