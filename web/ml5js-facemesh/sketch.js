@@ -5,8 +5,12 @@ let predictions = [];
 var videoBuffer;
 var threedBuffer;
 
-let videoWidth = 640;
-let videoHeight = 480;
+let videoWidth = 1920;
+let videoHeight =1080;
+
+let displayWidth;
+let displayHeight;
+let displayRatio = 0.5;
 
 let faceWidthThreshold = 400;
 /*
@@ -47,14 +51,21 @@ let ledLength = 1000;
 const options = {
   flipHorizontal: false, // boolean value for if the video should be flipped, defaults to false
   maxContinuousChecks: 100, // How many frames to go without running the bounding box detector. Only relevant if maxFaces > 1. Defaults to 5.
-  detectionConfidence: 0.9, // Threshold for discarding a prediction. Defaults to 0.9.
+  detectionConfidence: 0.7, // Threshold for discarding a prediction. Defaults to 0.9.
   maxFaces: 10, // The maximum number of faces detected in the input. Should be set to the minimum number for performance. Defaults to 10.
   scoreThreshold: 0.75, // A threshold for removing multiple (likely duplicate) detections based on a "non-maximum suppression" algorithm. Defaults to 0.75.
   iouThreshold: 0.3, // A float representing the threshold for deciding whether boxes overlap too much in non-maximum suppression. Must be between [0, 1]. Defaults to 0.3.
   }
 
+
+
+
 function setup() {
-  createCanvas(videoWidth*2, videoHeight*2);
+
+  displayWidth = videoWidth * displayRatio;
+  displayHeight = videoHeight* displayRatio;
+
+  createCanvas(displayWidth*2, displayHeight*2);
   angleMode(DEGREES); // Change the mode to 
 
   videoBuffer = createGraphics(videoWidth, videoHeight);
@@ -78,8 +89,29 @@ function setup() {
 
   mouseClicked(); 
 
-  video = createCapture(VIDEO);
-  video.size(videoWidth, videoHeight);
+  var constraints = {
+    video: {
+      /*
+        deviceId: {
+          label:'16MP USB Camera'
+        },
+        */
+       /*
+        label:{
+          exact:'16MP USB Camera'
+        },
+        */
+        mandatory: {
+          minWidth: videoWidth,
+          minHeight: videoHeight
+        },
+      },
+      audio: false
+    };
+
+  //video = createCapture(VIDEO);
+  video = createCapture(constraints);
+  //video.size(videoWidth, videoHeight);
 
   facemesh = ml5.facemesh(video, options,modelReady);
 
@@ -92,6 +124,23 @@ function setup() {
   // Hide the video element, and just show the canvas
   video.hide();
 }
+/*
+function gotDevices(deviceInfos) {
+  for (let i = 0; i !== deviceInfos.length; ++i) {
+    const deviceInfo = deviceInfos[i];
+    if (deviceInfo.kind == 'videoinput') {
+      devices.push({
+        label: deviceInfo.label,
+        id: deviceInfo.deviceId
+      });
+      console.log("DeviceLabel:"+deviceInfo.label);
+      console.log("DeviceId:"+deviceInfo.deviceId);
+    }
+  }
+  
+  return devices;
+}
+*/
 
 function modelReady() {
   console.log("Model ready!");
@@ -151,9 +200,9 @@ function draw() {
   }
 
   // Paint the off-screen buffers onto the main canvas
-  image(videoBuffer, 0, 0);
-  image(perspectiveBuffer, 0, videoHeight);
-  image(isometricBuffer, videoWidth, 0);
+  image(videoBuffer, 0, 0,displayWidth,displayHeight);
+  image(perspectiveBuffer, 0, displayHeight,displayWidth,displayHeight);
+  image(isometricBuffer, displayWidth, 0,displayWidth,displayHeight);
   //image(graphBuffer, videoWidth, videoHeight);
 }
 
