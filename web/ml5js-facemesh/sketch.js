@@ -51,7 +51,7 @@ let ledLength = 1000;
 const options = {
   flipHorizontal: false, // boolean value for if the video should be flipped, defaults to false
   maxContinuousChecks: 100, // How many frames to go without running the bounding box detector. Only relevant if maxFaces > 1. Defaults to 5.
-  detectionConfidence: 0.7, // Threshold for discarding a prediction. Defaults to 0.9.
+  detectionConfidence: 0.5, // Threshold for discarding a prediction. Defaults to 0.9.
   maxFaces: 10, // The maximum number of faces detected in the input. Should be set to the minimum number for performance. Defaults to 10.
   scoreThreshold: 0.75, // A threshold for removing multiple (likely duplicate) detections based on a "non-maximum suppression" algorithm. Defaults to 0.75.
   iouThreshold: 0.3, // A float representing the threshold for deciding whether boxes overlap too much in non-maximum suppression. Must be between [0, 1]. Defaults to 0.3.
