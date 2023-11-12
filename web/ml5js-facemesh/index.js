@@ -5,8 +5,13 @@ let predictions = [];
 var videoBuffer;
 var threedBuffer;
 
+/*
 let videoWidth = 1920;
 let videoHeight =1080;
+*/
+
+let videoWidth = 640;
+let videoHeight =480;
 
 let displayWidth;
 let displayHeight;
@@ -14,7 +19,7 @@ let displayRatio = 0.5;
 
 let faceWidthThreshold = 400;
 
-/*
+
 let face={
   center:{
     x:0,
@@ -34,32 +39,8 @@ let face={
     point:{},
   }
 };
-*/
-var faceClass = class{
-  constructor(){
 
-  }
-  set setCenter(c){
-    this.center = c;
-  }
-  get getCenter(){
-    return this.center;
-  }
-  set setHeadCenter(hc){
-    this.headCenter = hc;
-  }
-  get getHeadCenter(){
-    return this.headCenter;
-  }
-  set setEyeLine(el){
-    this.eyeLine = el;
-  }
-  get getEyeLine(){
-    return this.eyeLine;
-  }
-}
 
-let faces=[];
 
 let state = 'init';//init,search,found
 
@@ -124,7 +105,7 @@ function setup() {
           minHeight: videoHeight
         },
       },
-      audio: false
+      audio: true
     };
 
   //video = createCapture(VIDEO);
@@ -193,54 +174,40 @@ function draw() {
     perspectiveBuffer.background(64);
     isometricBuffer.background(64);
   }else if(state == 'found'){
-    processMeshes();
+    processMesh();
 
     drawVideoBuffer();
-    //drawPerspectiveBuffer();
-    //drawIsometricBuffer();
+    drawPerspectiveBuffer();
+    drawIsometricBuffer();
   }
 
   // Paint the off-screen buffers onto the main canvas
   image(videoBuffer, 0, 0,displayWidth,displayHeight);
-  //image(perspectiveBuffer, 0, displayHeight,displayWidth,displayHeight);
-  //image(isometricBuffer, displayWidth, 0,displayWidth,displayHeight);
+  image(perspectiveBuffer, 0, displayHeight,displayWidth,displayHeight);
+  image(isometricBuffer, displayWidth, 0,displayWidth,displayHeight);
   //image(graphBuffer, videoWidth, videoHeight);
 }
 
 function drawVideoBuffer(){
   videoBuffer.image(video, 0, 0, videoWidth, videoHeight);
   // We call function to draw all keypoints
-  drawVideoFaces();
+  drawVideoFace();
 }
 
 // A function to draw ellipses over the detected keypoints
-function drawVideoFaces() {
-  for (let i = 0; i < faces.length; i += 1) {
-    let face=faces[i];
+function drawVideoFace() {
     // Draw facial keypoints.
     for (let j = 0; j < face.points.length; j += 1) {
-      let x  = face.videoPoints[j].x;
-      let y  = face.videoPoints[j].y;
+        let x  = face.videoPoints[j].x;
+        let y  = face.videoPoints[j].y;
 
-      videoBuffer.fill(255, 255, 255);
-      videoBuffer.ellipse(x, y, 5, 5);
+        videoBuffer.fill(255, 255, 255);
+        videoBuffer.ellipse(x, y, 5, 5);
     }
-  }
 }
 
-function processMeshes(){
-  faces=[];
+function processMesh(){
 
-  for (let j = 0; j < predictions.length; j += 1) {
-    faces.push(processMesh(predictions[j].scaledMesh));
-  }
-}
-
-function processMesh(points){
-  let f = new faceClass();
-  //let points = predictions[0].scaledMesh;
-
-  //face.points = predictions[0].scaledMesh;
   //culc center
   let xMin = 1000;
   let xMax = -1000;
@@ -249,27 +216,27 @@ function processMesh(points){
   let zMin = 1000;
   let zMax = -1000;
 
-  /*
+  let points = predictions[0].scaledMesh;
+
   face.videoPoints = [];
   face.points = [];
   face.headCenter= {};
-  */
-
+  
   //convert ml5js coordinates to video and  p5js coordinates
   for (let j = 0; j < points.length; j += 1) {
     let [x, y,z] = points[j];
 
-    f.videoPoints.push({x:x,y:y,z:z});
+    face.videoPoints.push({x:x,y:y,z:z});
 
     x-=videoWidth/2;
     y-=videoHeight/2;
 
-    f.points.push({x:x,y:y,z:-z});
+    face.points.push({x:x,y:y,z:-z});
   }
   
   //center 
-  for (let j = 0; j < f.points.length; j += 1) {
-    let p = f.points[j];
+  for (let j = 0; j < face.points.length; j += 1) {
+    let p = face.points[j];
 
     if(p.x<xMin){
       xMin = p.x;
@@ -294,25 +261,24 @@ function processMesh(points){
   console.log("zMin=:"+zMin);
   console.log("zMax=:"+zMax);
   
-  f.center.x = (xMax+xMin)/2.0;
-  f.center.y = (yMax+yMin)/2.0;
-  f.center.z = (zMax+zMin)/2.0;
+  face.center.x = (xMax+xMin)/2.0;
+  face.center.y = (yMax+yMin)/2.0;
+  face.center.z = (zMax+zMin)/2.0;
 
+  face.lip = face.points[0];
+  face.nose = face.points[1] ;
+  face.top = face.points[10] ;
+  face.bottom = face.points[152] ;
+  face.right = face.points[234] ;
+  face.left = face.points[454] ;
 
-  f.lip = f.points[0];
-  f.nose = f.points[1] ;
-  f.top = f.points[10] ;
-  f.bottom = f.points[152] ;
-  f.right = f.points[234] ;
-  f.left = f.points[454] ;
-
-  f.headCenter.x = (f.right.x + f.left.x)/2.0;
-  f.headCenter.y = (f.right.y + f.left.y)/2.0;
-  f.headCenter.z = (f.right.z + f.left.z)/2.0;
+  face.headCenter.x = (face.right.x + face.left.x)/2.0;
+  face.headCenter.y = (face.right.y + face.left.y)/2.0;
+  face.headCenter.z = (face.right.z + face.left.z)/2.0;
 
   let centerToRight= {};
-  centerToRight.x = f.right.x - f.headCenter.x;
-  centerToRight.z = f.right.z - f.headCenter.z;
+  centerToRight.x = face.right.x - face.headCenter.x;
+  centerToRight.z = face.right.z - face.headCenter.z;
 
   /*
   //calc direction of the liptop and center around Y axis
@@ -323,17 +289,14 @@ function processMesh(points){
   let directionX = centerToRight.z;
   let directionZ = -centerToRight.x;
 
-  f.direction = -1 * calcAngleDegrees(directionX,directionZ);
+  face.direction = -1 * calcAngleDegrees(directionX,directionZ);
 
-  return f;
 }
 
 function calcAngleDegrees(x, y) {
   //return (Math.atan2(y, x) * 180) / Math.PI;
   return (Math.atan2(y, x));
 }
-
-
 
 function drawPerspectiveBuffer(){
   perspectiveBuffer.background(220);

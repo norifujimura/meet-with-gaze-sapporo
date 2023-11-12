@@ -5,12 +5,16 @@ let predictions = [];
 var videoBuffer;
 var threedBuffer;
 
+/*
 let videoWidth = 1920;
 let videoHeight =1080;
+*/
+let videoWidth = 640;
+let videoHeight =480;
 
 let displayWidth;
 let displayHeight;
-let displayRatio = 0.5;
+let displayRatio = 1.0;
 
 let faceWidthThreshold = 400;
 
@@ -37,26 +41,42 @@ let face={
 */
 var faceClass = class{
   constructor(){
-
+    this.points = [];
+    this.videoPoints = [];
+    this.center = [];
+    this.headCenter = [];
   }
+  /*
   set setCenter(c){
     this.center = c;
   }
   get getCenter(){
     return this.center;
   }
+  
   set setHeadCenter(hc){
     this.headCenter = hc;
   }
   get getHeadCenter(){
     return this.headCenter;
   }
+  */
+
   set setEyeLine(el){
     this.eyeLine = el;
   }
   get getEyeLine(){
     return this.eyeLine;
   }
+
+  set point(p){
+    this.vpoints.push(p);
+  }
+
+  set videoPoint(p){
+    this.videoPoints.push(p);
+  }
+
 }
 
 let faces=[];
@@ -196,13 +216,13 @@ function draw() {
     processMeshes();
 
     drawVideoBuffer();
-    //drawPerspectiveBuffer();
+    drawPerspectiveBuffer();
     //drawIsometricBuffer();
   }
 
   // Paint the off-screen buffers onto the main canvas
   image(videoBuffer, 0, 0,displayWidth,displayHeight);
-  //image(perspectiveBuffer, 0, displayHeight,displayWidth,displayHeight);
+  image(perspectiveBuffer, 0, displayHeight,displayWidth,displayHeight);
   //image(isometricBuffer, displayWidth, 0,displayWidth,displayHeight);
   //image(graphBuffer, videoWidth, videoHeight);
 }
@@ -227,6 +247,41 @@ function drawVideoFaces() {
     }
   }
 }
+
+function drawPerspectiveBuffer(){
+    perspectiveBuffer.background(220);
+    perspectiveBuffer.translate(0,0,0);
+    perspectiveBuffer.box(10);
+    //drawCoordinates(perspectiveBuffer);
+    drawMeshs(perspectiveBuffer);
+    //drawCenteredMesh(perspectiveBuffer);
+    //drawPoints(perspectiveBuffer);
+}
+  
+function drawMeshs(g) {
+    // Draw facial keypoints.
+    g.fill(255,255,255);
+    g.stroke(0,0,0);
+    for (let i = 0; i < faces.length; i += 1) {
+        let face=faces[i];
+        for (let j = 0; j < face.points.length; j += 1) {
+            //console.log(face.points[j]);
+            let p = face.points[j];
+            drawPoint(g,p,1);
+        }
+    }
+}
+
+function drawPoint(g,p,size){
+    //g.fill(127,127,127);
+    //g.stroke(0,0,0);
+  
+    g.push();
+    //g.translate(p.x-(videoWidth/2),p.y-(videoHeight/2),p.z);
+    g.translate(p.x,p.y,p.z);
+    g.box(size);
+    g.pop(); 
+  }
 
 function processMeshes(){
   faces=[];
@@ -266,7 +321,7 @@ function processMesh(points){
 
     f.points.push({x:x,y:y,z:-z});
   }
-  
+
   //center 
   for (let j = 0; j < f.points.length; j += 1) {
     let p = f.points[j];
@@ -291,13 +346,12 @@ function processMesh(points){
     }
   }
 
-  console.log("zMin=:"+zMin);
-  console.log("zMax=:"+zMax);
+  //console.log("zMin=:"+zMin);
+  //console.log("zMax=:"+zMax);
   
   f.center.x = (xMax+xMin)/2.0;
   f.center.y = (yMax+yMin)/2.0;
   f.center.z = (zMax+zMin)/2.0;
-
 
   f.lip = f.points[0];
   f.nose = f.points[1] ;
@@ -314,12 +368,6 @@ function processMesh(points){
   centerToRight.x = f.right.x - f.headCenter.x;
   centerToRight.z = f.right.z - f.headCenter.z;
 
-  /*
-  //calc direction of the liptop and center around Y axis
-  let directionX = face.nose.x - face.headCenter.x;
-  let directionZ = face.nose.z - face.headCenter.z;
-  */
-
   let directionX = centerToRight.z;
   let directionZ = -centerToRight.x;
 
@@ -328,6 +376,7 @@ function processMesh(points){
   return f;
 }
 
+
 function calcAngleDegrees(x, y) {
   //return (Math.atan2(y, x) * 180) / Math.PI;
   return (Math.atan2(y, x));
@@ -335,16 +384,8 @@ function calcAngleDegrees(x, y) {
 
 
 
-function drawPerspectiveBuffer(){
-  perspectiveBuffer.background(220);
-  perspectiveBuffer.translate(0,0,0);
-  perspectiveBuffer.box(10);
-  drawCoordinates(perspectiveBuffer);
-  drawMesh(perspectiveBuffer);
-  drawCenteredMesh(perspectiveBuffer);
-  drawPoints(perspectiveBuffer);
-}
 
+/*
 function drawIsometricBuffer(){
   isometricBuffer.background(220);
   isometricBuffer.translate(0,0,0);
@@ -423,16 +464,7 @@ function drawPoints(g) {
   g.fill(127,127,127);
 }
 
-function drawPoint(g,p,size){
-  //g.fill(127,127,127);
-  //g.stroke(0,0,0);
 
-  g.push();
-  //g.translate(p.x-(videoWidth/2),p.y-(videoHeight/2),p.z);
-  g.translate(p.x,p.y,p.z);
-  g.box(size);
-  g.pop(); 
-}
 
 function drawLed(g) {
   g.fill(255,255,255);
@@ -460,22 +492,7 @@ function drawKeypoints() {
   }
 }
 
-function drawMesh(g) {
-    // Draw facial keypoints.
-    g.fill(255,255,255);
-    g.stroke(0,0,0);
-    for (let j = 0; j < face.points.length; j += 1) {
-      //console.log(face.points[j]);
-      let p = face.points[j];
-      drawPoint(g,p,1);
-      /*
-      g.push();
-      g.translate(x-(videoWidth/2),y-(videoHeight/2),z);
-      g.box(1);
-      g.pop(); 
-      */
-    }
-}
+
 
 function drawCenteredMesh(g){
 
@@ -493,12 +510,6 @@ function drawCenteredMesh(g){
 
     drawPoint(g,np,1);
 
-    /*
-    g.push();
-    g.translate(nx,ny,nz);
-    g.box(1);
-    g.pop(); 
-    */
   }
 }
 
@@ -506,3 +517,4 @@ function degToRad(deg){
   var pi = Math.PI;
   return deg * (pi/180);
 }
+*/
