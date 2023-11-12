@@ -178,17 +178,17 @@ function mouseClicked() {
   }
 
   if(isoMode == "diagonal"){
-    isoCam.ortho(-videoWidth/2,videoWidth/2,-videoHeight/2,videoHeight/2,0,10000);
-    isoCam.setPosition(-100,-100,100);
-    isoCam.lookAt(0, 0, 0);
+    isoCam.ortho(-videoWidth,videoWidth,-videoHeight,videoHeight,0,10000);
+    isoCam.setPosition(-500,-500,1000);
+    isoCam.lookAt(0, 0, 500);
   }else if(isoMode == "top"){
     isoCam.ortho(-videoWidth/2,videoWidth/2,-videoHeight/2,videoHeight/2,0,10000);
     isoCam.setPosition(0,-5000,-0.1);
     isoCam.lookAt(0, 0, 0);
   }else if(isoMode == "far"){
     isoCam.ortho(-videoWidth,videoWidth,-videoHeight,videoHeight,0,10000);
-    isoCam.setPosition(0,-5000,-0.1);
-    isoCam.lookAt(0, 0, 0);
+    isoCam.setPosition(0,-100,300.0);
+    isoCam.lookAt(0, 0, 301.0);
   }
 }
 
@@ -217,18 +217,27 @@ function draw() {
 
     drawVideoBuffer();
     drawPerspectiveBuffer();
-    //drawIsometricBuffer();
+    drawIsometricBuffer();
   }
 
   // Paint the off-screen buffers onto the main canvas
   image(videoBuffer, 0, 0,displayWidth,displayHeight);
   image(perspectiveBuffer, 0, displayHeight,displayWidth,displayHeight);
-  //image(isometricBuffer, displayWidth, 0,displayWidth,displayHeight);
+  image(isometricBuffer, displayWidth, 0,displayWidth,displayHeight);
   //image(graphBuffer, videoWidth, videoHeight);
 }
 
+//Video
 function drawVideoBuffer(){
   videoBuffer.image(video, 0, 0, videoWidth, videoHeight);
+
+  if(isoMode == "diagonal"){
+    videoBuffer.text('diagonal', videoWidth-50,videoHeight-5);
+  }else if(isoMode == "top"){
+    videoBuffer.text('top', videoWidth-50,videoHeight-5);
+  }else if(isoMode == "far"){
+    videoBuffer.text('far', videoWidth-50,videoHeight-5);
+  }
   // We call function to draw all keypoints
   drawVideoFaces();
 }
@@ -248,41 +257,39 @@ function drawVideoFaces() {
   }
 }
 
+//Perspective
 function drawPerspectiveBuffer(){
+    //draw center point
     perspectiveBuffer.background(220);
     perspectiveBuffer.translate(0,0,0);
     perspectiveBuffer.box(10);
-    //drawCoordinates(perspectiveBuffer);
+    //
+
+    drawCoordinates(perspectiveBuffer);
+    drawVideoScreen(perspectiveBuffer);
     drawMeshs(perspectiveBuffer);
+    drawKeyPoints(perspectiveBuffer);
+    drawFaceBoxes(perspectiveBuffer);
     //drawCenteredMesh(perspectiveBuffer);
     //drawPoints(perspectiveBuffer);
 }
   
-function drawMeshs(g) {
-    // Draw facial keypoints.
-    g.fill(255,255,255);
-    g.stroke(0,0,0);
-    for (let i = 0; i < faces.length; i += 1) {
-        let face=faces[i];
-        for (let j = 0; j < face.points.length; j += 1) {
-            //console.log(face.points[j]);
-            let p = face.points[j];
-            drawPoint(g,p,1);
-        }
-    }
-}
+//Isometric
+function drawIsometricBuffer(){
+    isometricBuffer.background(220);
+    isometricBuffer.translate(0,0,0);
+    isometricBuffer.box(10);
 
-function drawPoint(g,p,size){
-    //g.fill(127,127,127);
-    //g.stroke(0,0,0);
-  
-    g.push();
-    //g.translate(p.x-(videoWidth/2),p.y-(videoHeight/2),p.z);
-    g.translate(p.x,p.y,p.z);
-    g.box(size);
-    g.pop(); 
+    drawCoordinates(isometricBuffer);
+    drawVideoScreen(isometricBuffer);
+    drawMeshs(isometricBuffer);
+    //drawCenteredMesh(isometricBuffer);
+    //drawPoints(isometricBuffer);
+    //drawLed(isometricBuffer);
   }
 
+
+//Mesh process
 function processMeshes(){
   faces=[];
 
@@ -373,49 +380,156 @@ function processMesh(points){
 
   f.direction = -1 * calcAngleDegrees(directionX,directionZ);
 
+  //face box
+  f.width = 2* dist(f.headCenter.x,f.headCenter.y,f.headCenter.z,f.right.x,f.right.y,f.right.z);
+  f.height = 2* dist(f.headCenter.x,f.headCenter.y,f.headCenter.z,f.bottom.x,f.bottom.y,f.bottom.z);
+  f.depth = 2* dist(f.headCenter.x,f.headCenter.y,f.headCenter.z,f.nose.x,f.nose.y,f.nose.z);
+
   return f;
 }
 
+//Common draw methods
 
+function drawMeshs(g) {
+    // Draw facial keypoints.
+    g.fill(255,255,255);
+    g.stroke(0,0,0);
+    
+    for (let i = 0; i < faces.length; i += 1) {
+        let face=faces[i];
+        for (let j = 0; j < face.points.length; j += 1) {
+            //console.log(face.points[j]);
+            let p = face.points[j];
+            drawPoint(g,p,1);
+        }
+    }
+}
+
+function drawEyes(g){
+    
+}
+
+function drawFaceBoxes(g) {
+    for (let i = 0; i < faces.length; i += 1) {
+        let face=faces[i];
+
+        g.push();
+        g.noFill();
+        g.stroke(127,127,127);
+        g.translate(face.headCenter.x,face.headCenter.y,face.headCenter.z);
+        g.rotateY(face.direction);
+        g.box(face.width,face.height,face.depth);
+        g.pop();
+    }
+}
+
+function drawKeyPoints(g) {
+    for (let i = 0; i < faces.length; i += 1) {
+        let face=faces[i];
+        //let center = face.headCenter;
+        g.fill(127,127,127);
+        g.stroke(0,0,0);
+
+        /*
+        //direction
+        g.push();
+        g.translate(center.x,center.y,center.z);
+        g.rotateY(face.direction);
+        g.push();
+            g.rotateZ(degToRad(-90));
+            //g.translate(0,62.5,0);
+            g.translate(0,500,0);
+            //g.cone(25,25,4,1);//radius,height,segmentsX, segmentsY=1
+            g.cone(25,1000,4,1);//radius,height,segmentsX, segmentsY=1
+        g.pop(); 
+        //g.box(50);
+        g.pop(); 
+        
+        //disc
+        g.push();
+        g.translate(center.x,0,center.z);
+        g.cylinder(50,1);//radius,height
+        g.pop(); 
+
+        g.push();
+        g.translate(center.x,center.y,center.z);
+        g.cylinder(50,1);//radius,height
+        g.pop(); 
+
+        g.push();
+        g.translate(center.x,center.y/2,center.z);
+        g.box(1,center.y,1);//radius,height
+        g.pop(); 
+        //
+        */
+
+        // Draw facial keypoints.
+        g.fill(200,200,200);
+        drawPoint(g,face.headCenter,20);
+        g.fill(0,64,0);
+        drawPoint(g,face.nose,20);
+        g.fill(64,0,0);
+        drawPoint(g,face.lip,10);
+        g.fill(127,0,0);
+        drawPoint(g,face.right,20);
+        g.fill(0,0,127);
+        drawPoint(g,face.left,20);
+        g.fill(127,127,127);
+    }
+}
+
+function drawPoint(g,p,size){
+    //g.fill(127,127,127);
+    //g.stroke(0,0,0);
+
+    g.push();
+    //g.translate(p.x-(videoWidth/2),p.y-(videoHeight/2),p.z);
+    g.translate(p.x,p.y,p.z);
+    g.box(size);
+    g.pop(); 
+}
+
+function drawCoordinates(g){
+    //x:red
+    push();
+    g.fill(255,0,0);
+    g.stroke(255,0,0);
+    g.line(0, 0, 0,100,0,0);
+    pop();
+  
+    //y:green
+    push();
+    g.fill(0,255,0);
+    g.stroke(0,255,0);
+    g.line(0, 0, 0,0,100,0);
+    pop();
+  
+    //z:blue
+    push();
+    g.fill(0,0,255);
+    g.stroke(0,0,255);
+    g.line(0, 0, 0,0,0,100);
+    pop();
+}
+
+function drawVideoScreen(g){
+    push();
+    g.strokeWeight(2);
+    g.noFill();
+    g.stroke(32,32,32);
+    //g.translate(-videoWidth/2,-videoHeight/2,0);
+    g.plane(videoWidth,videoHeight)
+    pop();
+}
+
+//Utils
 function calcAngleDegrees(x, y) {
   //return (Math.atan2(y, x) * 180) / Math.PI;
   return (Math.atan2(y, x));
 }
 
-
-
-
 /*
-function drawIsometricBuffer(){
-  isometricBuffer.background(220);
-  isometricBuffer.translate(0,0,0);
-  isometricBuffer.box(10);
-  drawCoordinates(isometricBuffer);
-  drawMesh(isometricBuffer);
-  drawCenteredMesh(isometricBuffer);
-  drawPoints(isometricBuffer);
-  drawLed(isometricBuffer);
-}
 
-function drawCoordinates(g){
-  push();
-  g.fill(255,0,0);
-  g.stroke(255,0,0);
-  g.line(0, 0, 0,100,0,0);
-  pop();
-
-  push();
-  g.fill(0,255,0);
-  g.stroke(0,255,0);
-  g.line(0, 0, 0,0,100,0);
-  pop();
-
-  push();
-  g.fill(0,0,255);
-  g.stroke(0,0,255);
-  g.line(0, 0, 0,0,0,100);
-  pop();
-}
 
 function drawPoints(g) {
   let center = face.headCenter;
