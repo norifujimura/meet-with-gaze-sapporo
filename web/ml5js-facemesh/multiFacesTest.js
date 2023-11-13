@@ -7,18 +7,21 @@ var perspectiveBuffer;
 var isometricBuffer;
 var lightBuffer;
 
-
+/*
 let videoWidth = 1920;
 let videoHeight =1080;
-
-/*
-let videoWidth = 640;
-let videoHeight =480;
+let displayRatio = 0.5;
+let angleOfView = 78;
 */
+
+let videoWidth = 640;
+let videoHeight = 480;
+let displayRatio = 1;
+let angleOfView = 54;
 
 let displayWidth;
 let displayHeight;
-let displayRatio = 0.5;
+
 
 //let faceWidthThreshold = 400;
 
@@ -54,7 +57,7 @@ let state = 'init';//init,search,found
 
 let isoMode = 'diagonal'; //diagonal,top
 
-let cameraDistance = 2000;//60cm
+var cameraDistance = 0;
 let eyeLineLength = 4000;//200cm
 let lightLength = 5000;//100cm
 //let ledDistance = 400;
@@ -73,6 +76,16 @@ const options = {
   }
 
 function setup() {
+
+  //calc camera disnace to the 1pix=1mmm screen
+  angleMode(DEGREES);
+  //if angle is 54:
+  // tan(27) = 320 / x
+  // x*tan(27) = 320
+  // x = 320 / tan(27)
+  cameraDistance = (videoWidth/2.0)/tan(angleOfView/2.0);
+
+  //
 
   displayWidth = videoWidth * displayRatio;
   displayHeight = videoHeight* displayRatio;
@@ -167,8 +180,8 @@ function mouseClicked() {
     isoCam.lookAt(0, 0, 301.0);
   }else if(isoMode == "far"){
     isoCam.ortho(-videoWidth*2,videoWidth*2,-videoHeight*2,videoHeight*2,0,10000);
-    isoCam.setPosition(0,-100,1200.0);
-    isoCam.lookAt(0, 0, 1201.0);
+    isoCam.setPosition(0,-100,500.0);
+    isoCam.lookAt(0, 0, 501.0);
   }
 }
 
