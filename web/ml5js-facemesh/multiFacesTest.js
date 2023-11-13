@@ -3,64 +3,33 @@ let video;
 let predictions = [];
 
 var videoBuffer;
-var threedBuffer;
+var perspectiveBuffer;
+var isometricBuffer;
+var lightBuffer;
 
-/*
+
 let videoWidth = 1920;
 let videoHeight =1080;
-*/
+
+/*
 let videoWidth = 640;
 let videoHeight =480;
+*/
 
 let displayWidth;
 let displayHeight;
-let displayRatio = 1.0;
+let displayRatio = 0.5;
 
-let faceWidthThreshold = 400;
+//let faceWidthThreshold = 400;
 
-/*
-let face={
-  center:{
-    x:0,
-    y:0,
-    z:0,
-  },
-  headCenter:{
-    x:0,
-    y:0,
-    z:0,
-  },
-  eyeLine:{
-    start:{},
-    end:{},
-  },
-  led:{
-    point:{},
-  }
-};
-*/
 var faceClass = class{
   constructor(){
     this.points = [];
     this.videoPoints = [];
     this.center = [];
     this.headCenter = [];
+    this.eye = [];
   }
-  /*
-  set setCenter(c){
-    this.center = c;
-  }
-  get getCenter(){
-    return this.center;
-  }
-  
-  set setHeadCenter(hc){
-    this.headCenter = hc;
-  }
-  get getHeadCenter(){
-    return this.headCenter;
-  }
-  */
 
   set setEyeLine(el){
     this.eyeLine = el;
@@ -85,9 +54,14 @@ let state = 'init';//init,search,found
 
 let isoMode = 'diagonal'; //diagonal,top
 
-let eyeLineLength = 5000;
-let ledDistance = 400;
-let ledLength = 1000;
+let cameraDistance = 2000;//60cm
+let eyeLineLength = 4000;//200cm
+let lightLength = 5000;//100cm
+//let ledDistance = 400;
+//let ledLength = 1000;
+
+var isEncount = false;
+let encounterThreshold = 100;
 
 const options = {
   flipHorizontal: false, // boolean value for if the video should be flipped, defaults to false
@@ -123,6 +97,8 @@ function setup() {
 
   isoCam= isometricBuffer.createCamera();
   //isoCam.ortho();
+
+  lightBuffer = createGraphics(videoWidth, videoHeight);
   
 
   mouseClicked(); 
@@ -182,13 +158,17 @@ function mouseClicked() {
     isoCam.setPosition(-500,-500,1000);
     isoCam.lookAt(0, 0, 500);
   }else if(isoMode == "top"){
-    isoCam.ortho(-videoWidth/2,videoWidth/2,-videoHeight/2,videoHeight/2,0,10000);
+    isoCam.ortho(-videoWidth,videoWidth,-videoHeight,videoHeight,0,10000);
+    /*
     isoCam.setPosition(0,-5000,-0.1);
     isoCam.lookAt(0, 0, 0);
-  }else if(isoMode == "far"){
-    isoCam.ortho(-videoWidth,videoWidth,-videoHeight,videoHeight,0,10000);
+    */
     isoCam.setPosition(0,-100,300.0);
     isoCam.lookAt(0, 0, 301.0);
+  }else if(isoMode == "far"){
+    isoCam.ortho(-videoWidth*2,videoWidth*2,-videoHeight*2,videoHeight*2,0,10000);
+    isoCam.setPosition(0,-100,1200.0);
+    isoCam.lookAt(0, 0, 1201.0);
   }
 }
 
@@ -214,17 +194,19 @@ function draw() {
     isometricBuffer.background(64);
   }else if(state == 'found'){
     processMeshes();
-
+    checkIntersections();
+    checkEncounters();
     drawVideoBuffer();
     drawPerspectiveBuffer();
     drawIsometricBuffer();
+    drawLightBuffer();
   }
 
   // Paint the off-screen buffers onto the main canvas
   image(videoBuffer, 0, 0,displayWidth,displayHeight);
   image(perspectiveBuffer, 0, displayHeight,displayWidth,displayHeight);
   image(isometricBuffer, displayWidth, 0,displayWidth,displayHeight);
-  //image(graphBuffer, videoWidth, videoHeight);
+  image(lightBuffer, displayWidth,displayHeight,displayWidth,displayHeight);
 }
 
 //Video
@@ -266,10 +248,11 @@ function drawPerspectiveBuffer(){
     //
 
     drawCoordinates(perspectiveBuffer);
-    drawVideoScreen(perspectiveBuffer);
+    //drawVideoScreen(perspectiveBuffer);
     drawMeshs(perspectiveBuffer);
     drawKeyPoints(perspectiveBuffer);
     drawFaceBoxes(perspectiveBuffer);
+    drawEyes(perspectiveBuffer);
     //drawCenteredMesh(perspectiveBuffer);
     //drawPoints(perspectiveBuffer);
 }
@@ -281,12 +264,101 @@ function drawIsometricBuffer(){
     isometricBuffer.box(10);
 
     drawCoordinates(isometricBuffer);
-    drawVideoScreen(isometricBuffer);
+    //drawVideoScreen(isometricBuffer);
     drawMeshs(isometricBuffer);
+
+    drawFaceBoxes(isometricBuffer);
+    drawEyes(isometricBuffer);
+    drawCamera(isometricBuffer);
+    drawLight(isometricBuffer);
+
+    drawIntersections(isometricBuffer);
     //drawCenteredMesh(isometricBuffer);
     //drawPoints(isometricBuffer);
     //drawLed(isometricBuffer);
-  }
+}
+
+//light sim
+function drawLightBuffer(){
+    /*
+    lightBuffer.background(32);
+    lightBuffer.fill(182,177,153);
+    lightBuffer.rect(0,0,videoWidth,videoHeight/4);
+    lightBuffer.fill(178,179,150);
+    lightBuffer.rect(0,videoHeight/4*3,videoWidth,videoHeight/4);
+    */
+    lightBuffer.noStroke();
+    //center bg
+    //lightBuffer.fill(192,187,160);
+    lightBuffer.fill(180,170,160);
+    lightBuffer.rect(0,videoHeight/4 + videoHeight/4 *0.25,videoWidth,videoHeight/4*1.7);
+
+    //draw light body
+
+    lightBuffer.fill(200,200,200);
+    lightBuffer.rect(0,videoHeight/4 + videoHeight/4 *0.25 + videoHeight/4* 0.8,videoWidth,videoHeight/2*0.01);
+    lightBuffer.fill(32,32,32,32);
+    lightBuffer.rect(0,videoHeight/4 + videoHeight/4 *0.4 + videoHeight/4* 0.8,videoWidth,videoHeight/2*0.01);
+
+        //draw moving light and its reflection
+        drawMovingLight(lightBuffer,videoHeight/4*2.065);
+
+    //black
+    lightBuffer.fill(32,32,32);
+    //top black
+    lightBuffer.rect(0,videoHeight/4,videoWidth,videoHeight/4*0.25);
+    //bottom black
+    lightBuffer.rect(0,videoHeight/4*2.95,videoWidth,videoHeight/4*0.05);
+
+
+    //top black shadow
+    lightBuffer.fill(32,32,32,32);
+    lightBuffer.rect(0,videoHeight/4*1.27,videoWidth,videoHeight/4*0.1);
+
+    //ceiling
+    lightBuffer.fill(182,177,153);
+    lightBuffer.rect(0,0,videoWidth,videoHeight/4);
+        //top gray
+        lightBuffer.fill(151,148,113);
+        lightBuffer.rect(0,videoHeight/4*0.8,videoWidth,videoHeight/4*0.2);
+        //
+
+    //floor
+    lightBuffer.fill(178,179,150);
+    lightBuffer.rect(0,videoHeight/4*3,videoWidth,videoHeight/4);
+
+
+}
+
+
+//Calc intersection
+function checkIntersections(){
+    for (let i = 0; i < faces.length; i += 1) {
+        let face=faces[i];
+        face.intersect = intersect2(-lightLength/2,cameraDistance,lightLength/2,cameraDistance,face.headCenter.x,face.headCenter.z,face.eye.x,face.eye.z);
+    }
+}
+
+function checkEncounters(){
+    isEnount = false;
+    if(faces.length==0){
+        return;
+    }
+
+    if(faces.length==1){
+        return;
+    }
+
+    if(faces.length==3){
+        return;
+    }
+
+    if(abs(faces[0].intersect.x-faces[1].intersect.x)<encounterThreshold){
+        isEnount = true;
+    }
+
+    return;
+}
 
 
 //Mesh process
@@ -310,12 +382,6 @@ function processMesh(points){
   let yMax = -1000;
   let zMin = 1000;
   let zMax = -1000;
-
-  /*
-  face.videoPoints = [];
-  face.points = [];
-  face.headCenter= {};
-  */
 
   //convert ml5js coordinates to video and  p5js coordinates
   for (let j = 0; j < points.length; j += 1) {
@@ -352,9 +418,6 @@ function processMesh(points){
       zMax = p.z;
     }
   }
-
-  //console.log("zMin=:"+zMin);
-  //console.log("zMax=:"+zMax);
   
   f.center.x = (xMax+xMin)/2.0;
   f.center.y = (yMax+yMin)/2.0;
@@ -372,8 +435,8 @@ function processMesh(points){
   f.headCenter.z = (f.right.z + f.left.z)/2.0;
 
   let centerToRight= {};
-  centerToRight.x = f.right.x - f.headCenter.x;
-  centerToRight.z = f.right.z - f.headCenter.z;
+  centerToRight.x = f.nose.x - f.headCenter.x;
+  centerToRight.z = f.nose.z - f.headCenter.z;
 
   let directionX = centerToRight.z;
   let directionZ = -centerToRight.x;
@@ -385,10 +448,67 @@ function processMesh(points){
   f.height = 2* dist(f.headCenter.x,f.headCenter.y,f.headCenter.z,f.bottom.x,f.bottom.y,f.bottom.z);
   f.depth = 2* dist(f.headCenter.x,f.headCenter.y,f.headCenter.z,f.nose.x,f.nose.y,f.nose.z);
 
+  f.degrees = -degrees(f.direction)+90;
+
+  f.eye.deltax = cos(f.degrees) * eyeLineLength;
+  f.eye.deltaz = sin(f.degrees) * eyeLineLength;
+
+  f.eye.x = f.headCenter.x + f.eye.deltax;
+  f.eye.y = 0;
+  f.eye.z = f.headCenter.z + f.eye.deltaz;
+
   return f;
 }
 
 //Common draw methods
+
+function drawMovingLight(g,centerHeight){
+    let ratio = videoWidth / lightLength;
+    g.ellipseMode(CENTER);
+
+    for (let i = 0; i < faces.length; i += 1) {
+        let face=faces[i];
+        if(face.intersect == false){
+            continue;
+        }
+        let x = (face.intersect.x * -1 + lightLength /2 )* ratio;
+        //console.log("Intersect");
+        g.noStroke();
+        g.fill(255,255,255,127);
+        g.ellipse(x,centerHeight,150,50);
+
+        g.fill(255,255,255,64);
+        g.ellipse(x,centerHeight,200,300);
+
+        g.fill(255,255,255,32);
+        g.ellipse(x,centerHeight,300,800);
+        /*
+        g.rectMode(CENTER);
+        g.rect(x,centerHeight,100,100);
+        */
+    }
+    g.rectMode(CORNER);
+}
+
+function drawEncounter(g,centerHeight){
+    let ratio = videoWidth / lightLength;
+    g.ellipseMode(CENTER);
+
+    if(isEncount){
+
+        let rawX = (faces[0].intersect.x+faces[1].intersect.x)/2;
+        let x = (frawX * -1 + lightLength /2 )* ratio;
+        g.noStroke();
+        g.fill(255,215,95,127);
+        g.ellipse(x,centerHeight,150,50);
+
+        g.fill(255,215,95,64);
+        g.ellipse(x,centerHeight,200,300);
+
+        g.fill(255,215,95,32);
+        g.ellipse(x,centerHeight,300,800);
+    }
+}
 
 function drawMeshs(g) {
     // Draw facial keypoints.
@@ -406,7 +526,23 @@ function drawMeshs(g) {
 }
 
 function drawEyes(g){
-    
+    //let length = 10000;
+    for (let i = 0; i < faces.length; i += 1) {
+        let face=faces[i];
+
+        g.push();
+        g.noFill();
+        g.stroke(255,255,255);
+        g.strokeWeight(4);
+        /*
+        g.translate(face.headCenter.x,face.headCenter.y,face.headCenter.z);
+        //g.rotateY(face.direction);
+        g.line(0,0,0,face.eye.deltax,0,face.eye.deltaz);
+        */
+        g.line(face.headCenter.x,face.headCenter.y,face.headCenter.z,face.eye.x,0,face.eye.z);
+        g.pop();
+
+    }
 }
 
 function drawFaceBoxes(g) {
@@ -429,39 +565,6 @@ function drawKeyPoints(g) {
         //let center = face.headCenter;
         g.fill(127,127,127);
         g.stroke(0,0,0);
-
-        /*
-        //direction
-        g.push();
-        g.translate(center.x,center.y,center.z);
-        g.rotateY(face.direction);
-        g.push();
-            g.rotateZ(degToRad(-90));
-            //g.translate(0,62.5,0);
-            g.translate(0,500,0);
-            //g.cone(25,25,4,1);//radius,height,segmentsX, segmentsY=1
-            g.cone(25,1000,4,1);//radius,height,segmentsX, segmentsY=1
-        g.pop(); 
-        //g.box(50);
-        g.pop(); 
-        
-        //disc
-        g.push();
-        g.translate(center.x,0,center.z);
-        g.cylinder(50,1);//radius,height
-        g.pop(); 
-
-        g.push();
-        g.translate(center.x,center.y,center.z);
-        g.cylinder(50,1);//radius,height
-        g.pop(); 
-
-        g.push();
-        g.translate(center.x,center.y/2,center.z);
-        g.box(1,center.y,1);//radius,height
-        g.pop(); 
-        //
-        */
 
         // Draw facial keypoints.
         g.fill(200,200,200);
@@ -514,7 +617,7 @@ function drawCoordinates(g){
 
 function drawVideoScreen(g){
     push();
-    g.strokeWeight(2);
+    g.strokeWeight(4);
     g.noFill();
     g.stroke(32,32,32);
     //g.translate(-videoWidth/2,-videoHeight/2,0);
@@ -522,10 +625,132 @@ function drawVideoScreen(g){
     pop();
 }
 
+function drawCamera(g){
+    push();
+        g.strokeWeight(4);
+        g.noFill();
+        g.stroke(32,32,32);
+        //g.translate(-videoWidth/2,-videoHeight/2,0);
+        g.box(videoWidth,videoHeight,0);
+
+        g.line(0,0,cameraDistance,-videoWidth/2,-videoHeight/2,0);
+        g.line(0,0,cameraDistance,videoWidth/2,-videoHeight/2,0);
+        g.line(0,0,cameraDistance,-videoWidth/2,videoHeight/2,0);
+        g.line(0,0,cameraDistance,videoWidth/2,videoHeight/2,0);
+    pop();
+}
+
+function drawLight(g){
+    push();
+        g.strokeWeight(4);
+        g.noFill();
+        g.stroke(32,32,32);
+        g.line(-lightLength/2,0,cameraDistance,lightLength/2,0,cameraDistance);
+    pop();
+}
+
+function drawIntersections(g){
+    for (let i = 0; i < faces.length; i += 1) {
+        let face=faces[i];
+        if(face.intersect == false){
+            continue;
+        }
+        console.log("Intersect");
+        push();
+            g.stroke(0,0,0);
+            g.fill(200,200,200);
+            drawPoint(g,{x:face.intersect.x,y:0,z:face.intersect.z},40);
+        pop(); 
+    }
+}
+
+
+
 //Utils
 function calcAngleDegrees(x, y) {
   //return (Math.atan2(y, x) * 180) / Math.PI;
   return (Math.atan2(y, x));
+}
+
+//https://editor.p5js.org/mwburke/sketches/h1ec1s6LG
+
+function intersect_point(point1, point2, point3, point4) {
+    const ua = ((point4[0] - point3[0]) * (point1[1] - point3[1]) - 
+              (point4[1] - point3[1]) * (point1[0] - point3[0])) /
+             ((point4[1] - point3[1]) * (point2[0] - point1[0]) - 
+              (point4[0] - point3[0]) * (point2[1] - point1[1]));
+   
+   const ub = ((point2[0] - point1[0]) * (point1[1] - point3[1]) - 
+              (point2[1] - point1[1]) * (point1[0] - point3[0])) /
+             ((point4[1] - point3[1]) * (point2[0] - point1[0]) - 
+              (point4[0] - point3[0]) * (point2[1] - point1[1]));
+   
+   const x = point1[0] + ua * (point2[0] - point1[0]);
+   const y = point1[1] + ua * (point2[1] - point1[1]);
+   
+   return [x, y]
+ }
+
+ function intersect2(x1, y1, x2, y2, x3, y3, x4, y4){
+    console.log ("x1:"+x1+" y1:"+y1);
+    console.log ("x2:"+x2+" y2:"+y2);
+    console.log ("x3:"+x3+" y3:"+y3);
+    console.log ("x4:"+x4+" y4:"+y4);
+
+    let p1 = [x1,y1];
+    let p2 = [x2,y2];
+    let p3 = [x3,y3];
+    let p4 = [x4,y4];
+
+    let result= intersect_point(p1,p2,p3,p4);
+    console.log ("INPUT x:"+p1[0]+" y:"+p1[1]);
+    console.log ("RESULT x:"+result[0]+" y:"+result[1]);
+    return {x:result[0],z:result[1]};
+ }
+
+//https://editor.p5js.org/mmatty/sketches/Zjf4nti25
+// line intercept math by Paul Bourke http://paulbourke.net/geometry/pointlineplane/
+// Determine the intersection point of two line segments
+// Return FALSE if the lines don't intersect
+// line1: x1,y1 to x2,y2   
+// line2: x3,y3 to x4,y4   
+function intersect(x1, y1, x2, y2, x3, y3, x4, y4) {
+
+    console.log ("x1:"+x1+" y1:"+y1);
+    console.log ("x2:"+x2+" y2:"+y2);
+    console.log ("x3:"+x3+" y3:"+y3);
+    console.log ("x4:"+x4+" y4:"+y4);
+    
+
+    // Check if none of the lines are of length 0
+    if ((x1 === x2 && y1 === y2) || (x3 === x4 && y3 === y4)) {
+        return false;
+    }
+
+    denominator = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
+
+    // Lines are parallel if denominator is 0
+    console.log ("denom:"+denominator);
+
+    let ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3));
+    let ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) ;
+    console.log ("ua:"+ua);
+    console.log ("ub:"+ub);
+
+
+    // is the intersection along the segments
+    if (ua < 0 || ua > 1 || ub < 0 || ub > 1) {
+        return false;
+    }
+
+    // Return a object with the x and y coordinates of the intersection
+    let x = x1 + ua * (x2 - x1);
+    let y = y1 + ua * (y2 - y1);
+
+    console.log ("INTERSECT X:"+x);
+    console.log ("INTERSECT Y:"+y);
+
+    return { x, y };
 }
 
 /*
