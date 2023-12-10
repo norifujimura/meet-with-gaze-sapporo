@@ -20,12 +20,22 @@ let videoWidth = 640;
 let videoHeight = 480;
 let displayRatio = 1;
 let angleOfView = 54;
-
-let screenDistance = 0;//screenDistance will be calculated in Setup()
-
 let displayWidth;
 let displayHeight;
 
+//Screen means where 1pixel equals phisical 1mm
+let screenDistance = 0;//screenDistance will be calculated in Setup()
+let lightDistance = 100;//distance from zero point to LED bar
+let eyeLineLength = 4000;//400cm
+let lightLength = 1000;//100cm
+
+let faces=[];
+
+let state = 'init';//init,search,found
+let isoMode = 'diagonal'; //diagonal,top
+
+var isEncount = false;
+let encounterThreshold = 100;
 
 //let faceWidthThreshold = 400;
 
@@ -43,7 +53,7 @@ var faceClass = class{
     this.center = [];
     this.headCenter = [];
 
-    this.eye = [];
+    this.eyeLine = [];
   }
 
   set setEyeLine(el){
@@ -62,21 +72,6 @@ var faceClass = class{
   }
 
 }
-
-let faces=[];
-
-let state = 'init';//init,search,found
-
-let isoMode = 'diagonal'; //diagonal,top
-
-//var cameraDistance = 0;
-let eyeLineLength = 4000;//200cm
-let lightLength = 5000;//100cm
-//let ledDistance = 400;
-//let ledLength = 1000;
-
-var isEncount = false;
-let encounterThreshold = 100;
 
 const options = {
   flipHorizontal: false, // boolean value for if the video should be flipped, defaults to false
@@ -225,26 +220,27 @@ function draw() {
     isometricBuffer.background(64);
   }else if(state == 'found'){
     processMeshes();
-    //checkIntersections();
+    checkIntersections();
+
     //checkEncounters();
     drawVideoBuffer();
     drawPerspectiveBuffer();
     drawIsometricBuffer();
-    //drawLightBuffer();
+    drawLightBuffer();
   }
 
   // Paint the off-screen buffers onto the main canvas
   image(videoBuffer, 0, 0,displayWidth,displayHeight);
   image(perspectiveBuffer, 0, displayHeight,displayWidth,displayHeight);
   image(isometricBuffer, displayWidth, 0,displayWidth,displayHeight);
-  //image(lightBuffer, displayWidth,displayHeight,displayWidth,displayHeight);
+  image(lightBuffer, displayWidth,displayHeight,displayWidth,displayHeight);
 }
 
 //Video
 function drawVideoBuffer(){
   videoBuffer.image(video, 0, 0, videoWidth, videoHeight);
 
-  videoBuffer.text(isoMode, videoWidth-50,videoHeight-5);
+  videoBuffer.text(isoMode, 0,videoHeight-5);
   // We call function to draw all keypoints
   drawVideoMeshes();
 }
@@ -279,7 +275,7 @@ function drawPerspectiveBuffer(){
     //drawMeshOriginalPoints(perspectiveBuffer);
     drawMeshPoints(perspectiveBuffer);
     drawFaceBoxes(perspectiveBuffer);
-    drawEyes(perspectiveBuffer);
+    drawEyeLines(perspectiveBuffer);
     
     //drawMeshsOriginal(perspectiveBuffer);
     //drawKeyPoints(perspectiveBuffer);
@@ -302,15 +298,15 @@ function drawIsometricBuffer(){
     //drawMeshOriginalPoints(isometricBuffer);
     drawMeshPoints(isometricBuffer);
     drawFaceBoxes(isometricBuffer);
-    drawEyes(isometricBuffer);
+    drawEyeLines(isometricBuffer);
 
     //drawMeshs(isometricBuffer);
     //drawFaceBoxes(isometricBuffer);
     //drawEyes(isometricBuffer);
     //drawCamera(isometricBuffer);
-    //drawLight(isometricBuffer);
+    drawLight(isometricBuffer);
 
-    //drawIntersections(isometricBuffer);
+    drawIntersections(isometricBuffer);
     //drawCenteredMesh(isometricBuffer);
     //drawPoints(isometricBuffer);
     //drawLed(isometricBuffer);
@@ -329,17 +325,26 @@ function drawLightBuffer(){
     //center bg
     //lightBuffer.fill(192,187,160);
     lightBuffer.fill(180,170,160);
-    lightBuffer.rect(0,videoHeight/4 + videoHeight/4 *0.25,videoWidth,videoHeight/4*1.7);
+    //lightBuffer.rect(0,videoHeight/4 + videoHeight/4 *0.25,videoWidth,videoHeight/4*1.7);
+    lightBuffer.rect(0,videoHeight/4,videoWidth,videoHeight/2);
 
     //draw light body
+    lightBuffer.fill(200,200,200);
+    lightBuffer.rect(0,videoHeight/2,videoWidth,videoHeight/2*0.01);
+    lightBuffer.fill(32,32,32,32);
+    lightBuffer.rect(0,videoHeight*0.6,videoWidth,videoHeight/2*0.01);
 
+    //draw moving light and its reflection
+    drawMovingLight(lightBuffer,videoHeight/2);
+
+    /*
+    //draw light body
     lightBuffer.fill(200,200,200);
     lightBuffer.rect(0,videoHeight/4 + videoHeight/4 *0.25 + videoHeight/4* 0.8,videoWidth,videoHeight/2*0.01);
     lightBuffer.fill(32,32,32,32);
     lightBuffer.rect(0,videoHeight/4 + videoHeight/4 *0.4 + videoHeight/4* 0.8,videoWidth,videoHeight/2*0.01);
 
-        //draw moving light and its reflection
-        drawMovingLight(lightBuffer,videoHeight/4*2.065);
+
 
     //black
     lightBuffer.fill(32,32,32);
@@ -364,7 +369,7 @@ function drawLightBuffer(){
     //floor
     lightBuffer.fill(178,179,150);
     lightBuffer.rect(0,videoHeight/4*3,videoWidth,videoHeight/4);
-
+    */
 
 }
 
@@ -373,7 +378,7 @@ function drawLightBuffer(){
 function checkIntersections(){
     for (let i = 0; i < faces.length; i += 1) {
         let face=faces[i];
-        face.intersect = intersect2(-lightLength/2,cameraDistance,lightLength/2,cameraDistance,face.headCenter.x,face.headCenter.z,face.eye.x,face.eye.z);
+        face.intersect = intersect2(-lightLength/2,lightDistance,lightLength/2,lightDistance,face.headCenter.x,face.headCenter.z,face.eyeLine.x,face.eyeLine.z);
     }
 }
 
@@ -517,12 +522,12 @@ function processMesh(points){
 
   f.degrees = -degrees(f.direction)+90;
 
-  f.eye.deltax = cos(f.degrees) * eyeLineLength;
-  f.eye.deltaz = sin(f.degrees) * eyeLineLength;
+  f.eyeLine.deltax = cos(f.degrees) * eyeLineLength;
+  f.eyeLine.deltaz = sin(f.degrees) * eyeLineLength;
 
-  f.eye.x = f.headCenter.x + f.eye.deltax;
-  f.eye.y = 0;
-  f.eye.z = f.headCenter.z + f.eye.deltaz;
+  f.eyeLine.x = f.headCenter.x + f.eyeLine.deltax;
+  f.eyeLine.y = 0;
+  f.eyeLine.z = f.headCenter.z + f.eyeLine.deltaz;
 
   return f;
 }
@@ -531,6 +536,7 @@ function processMesh(points){
 function drawMovingLight(g,centerHeight){
     let ratio = videoWidth / lightLength;
     g.ellipseMode(CENTER);
+    g.rectMode(CENTER);
 
     for (let i = 0; i < faces.length; i += 1) {
         let face=faces[i];
@@ -540,22 +546,25 @@ function drawMovingLight(g,centerHeight){
         let x = (face.intersect.x * -1 + lightLength /2 )* ratio;
         //console.log("Intersect");
         g.noStroke();
-        g.fill(255,255,255,127);
+        g.fill(255,255,255,64);
         g.ellipse(x,centerHeight,150,50);
 
-        g.fill(255,255,255,64);
+        g.fill(255,255,255,32);
         g.ellipse(x,centerHeight,200,300);
 
-        g.fill(255,255,255,32);
+        g.fill(255,255,255,16);
         g.ellipse(x,centerHeight,300,800);
         /*
         g.rectMode(CENTER);
         g.rect(x,centerHeight,100,100);
         */
+        g.fill(255,255,255,200);
+        g.rect(x,centerHeight,100,3);
     }
     g.rectMode(CORNER);
 }
 
+/*
 function drawEncounter(g,centerHeight){
     let ratio = videoWidth / lightLength;
     g.ellipseMode(CENTER);
@@ -575,6 +584,7 @@ function drawEncounter(g,centerHeight){
         g.ellipse(x,centerHeight,300,800);
     }
 }
+*/
 
 function drawMeshOriginalPoints(g) {
     // Draw facial keypoints.
@@ -606,7 +616,7 @@ function drawMeshPoints(g) {
   }
 }
 
-function drawEyes(g){
+function drawEyeLines(g){
     //let length = 10000;
     for (let i = 0; i < faces.length; i += 1) {
         let face=faces[i];
@@ -620,7 +630,7 @@ function drawEyes(g){
         //g.rotateY(face.direction);
         g.line(0,0,0,face.eye.deltax,0,face.eye.deltaz);
         */
-        g.line(face.headCenter.x,face.headCenter.y,face.headCenter.z,face.eye.x,0,face.eye.z);
+        g.line(face.headCenter.x,face.headCenter.y,face.headCenter.z,face.eyeLine.x,0,face.eyeLine.z);
         g.pop();
 
     }
@@ -730,7 +740,7 @@ function drawLight(g){
         g.strokeWeight(4);
         g.noFill();
         g.stroke(32,32,32);
-        g.line(-lightLength/2,0,cameraDistance,lightLength/2,0,cameraDistance);
+        g.line(-lightLength/2,0,lightDistance,lightLength/2,0,lightDistance);
     pop();
 }
 
