@@ -337,6 +337,17 @@ function drawLightBuffer(){
     //draw moving light and its reflection
     drawMovingLight(lightBuffer,videoHeight/2);
 
+    //black
+    lightBuffer.fill(32,32,32);
+    //top black
+    lightBuffer.rect(0,videoHeight/4,videoWidth,-videoHeight/4*0.25);
+    //bottom black
+    lightBuffer.rect(0,videoHeight/4*3,videoWidth,videoHeight/4*0.05);
+
+    //top black shadow
+    lightBuffer.fill(32,32,32,32);
+    lightBuffer.rect(0,videoHeight/4,videoWidth,videoHeight/4*0.1);
+
     /*
     //draw light body
     lightBuffer.fill(200,200,200);
