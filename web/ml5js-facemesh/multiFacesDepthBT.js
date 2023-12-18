@@ -8,21 +8,19 @@ var isometricBuffer;
 var lightBuffer;
 
 //Logitech camera
-/*
 let videoWidth = 1920;
 let videoHeight =1080;
-let displayRatio = 0.5;
+let displayRatio = 0.4;
 let angleOfView = 78;
-*/
 
 
 //Apple facetime camera on M1 macbook pro
-
+/*
 let videoWidth = 640;
 let videoHeight = 480;
 let displayRatio = 1;
 let angleOfView = 54;
-
+*/
 
 let displayWidth;
 let displayHeight;
@@ -318,6 +316,23 @@ function drawIsometricBuffer(){
 
 //light sim
 function drawLightBuffer(){
+    lightBuffer.textSize(36);
+    lightBuffer.background(255);
+
+    lightBuffer.fill(0,0,0);
+    
+    lightBuffer.text(isoMode, 0,50);
+
+    for (let i = 0; i < faces.length; i += 1) {
+        let face=faces[i];
+        
+        if(face.intersect == false){
+            continue;
+        }
+        
+        lightBuffer.text(round(face.intersect.x), 0,100+50*i);
+    }
+
     /*
     lightBuffer.background(32);
     lightBuffer.fill(182,177,153);
@@ -325,6 +340,7 @@ function drawLightBuffer(){
     lightBuffer.fill(178,179,150);
     lightBuffer.rect(0,videoHeight/4*3,videoWidth,videoHeight/4);
     */
+
     lightBuffer.noStroke();
     //center bg
     //lightBuffer.fill(192,187,160);
