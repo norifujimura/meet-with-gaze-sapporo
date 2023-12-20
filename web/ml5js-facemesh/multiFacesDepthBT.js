@@ -8,19 +8,21 @@ var isometricBuffer;
 var lightBuffer;
 
 //Logitech camera
+/*
 let videoWidth = 1920;
 let videoHeight =1080;
 let displayRatio = 0.4;
 let angleOfView = 78;
+*/
 
 
 //Apple facetime camera on M1 macbook pro
-/*
+
 let videoWidth = 640;
 let videoHeight = 480;
 let displayRatio = 1;
 let angleOfView = 54;
-*/
+
 
 let displayWidth;
 let displayHeight;
@@ -38,6 +40,8 @@ let isoMode = 'diagonal'; //diagonal,top
 
 var isEncount = false;
 let encounterThreshold = 100;
+
+var monitor;
 
 //let faceWidthThreshold = 400;
 
@@ -108,7 +112,7 @@ function setup() {
 
   perspectiveBuffer = createGraphics(videoWidth, videoHeight,WEBGL);
   perspectiveBuffer.normalMaterial();
-  perspectiveBuffer.debugMode();
+  //perspectiveBuffer.debugMode();
 
   isometricBuffer = createGraphics(videoWidth, videoHeight,WEBGL);
   isometricBuffer.normalMaterial();
@@ -289,29 +293,30 @@ function drawPerspectiveBuffer(){
   
 //Isometric
 function drawIsometricBuffer(){
-    isometricBuffer.background(220);
-    isometricBuffer.translate(0,0,0);
-    isometricBuffer.box(10);
+  isometricBuffer.strokeWeight(1);
+  isometricBuffer.background(220);
+  isometricBuffer.translate(0,0,0);
+  isometricBuffer.box(10);
 
-    drawCoordinates(isometricBuffer);
-    drawVideoScreen(isometricBuffer);
-    drawCamera(isometricBuffer);
+  drawCoordinates(isometricBuffer);
+  drawVideoScreen(isometricBuffer);
+  drawCamera(isometricBuffer);
 
-    //drawMeshOriginalPoints(isometricBuffer);
-    drawMeshPoints(isometricBuffer);
-    drawFaceBoxes(isometricBuffer);
-    drawEyeLines(isometricBuffer);
+  //drawMeshOriginalPoints(isometricBuffer);
+  drawMeshPoints(isometricBuffer);
+  drawFaceBoxes(isometricBuffer);
+  drawEyeLines(isometricBuffer);
 
-    //drawMeshs(isometricBuffer);
-    //drawFaceBoxes(isometricBuffer);
-    //drawEyes(isometricBuffer);
-    //drawCamera(isometricBuffer);
-    drawLight(isometricBuffer);
+  //drawMeshs(isometricBuffer);
+  //drawFaceBoxes(isometricBuffer);
+  //drawEyes(isometricBuffer);
+  //drawCamera(isometricBuffer);
+  drawLight(isometricBuffer);
 
-    drawIntersections(isometricBuffer);
-    //drawCenteredMesh(isometricBuffer);
-    //drawPoints(isometricBuffer);
-    //drawLed(isometricBuffer);
+  drawIntersections(isometricBuffer);
+  //drawCenteredMesh(isometricBuffer);
+  //drawPoints(isometricBuffer);
+  //drawLed(isometricBuffer);
 }
 
 //light sim
@@ -330,7 +335,13 @@ function drawLightBuffer(){
             continue;
         }
         
-        lightBuffer.text(round(face.intersect.x), 0,100+50*i);
+        //lightBuffer.text(round(face.intersect.x), 0,100+50*i);
+        if(monitor == null){
+          monitor = document.getElementById("monitor");
+        }
+       var s=  round(face.intersect.x);
+       monitor.innerHTML = "value to send: "+s;
+        //document.getElementById("monitor").value = s;
     }
 
     /*
@@ -634,7 +645,9 @@ function drawMeshOriginalPoints(g) {
 
 function drawMeshPoints(g) {
   // Draw facial keypoints.
+
   g.fill(255,255,255);
+  g.strokeWeight(1);
   g.stroke(255,0,0);
   
   for (let i = 0; i < faces.length; i += 1) {
@@ -655,7 +668,7 @@ function drawEyeLines(g){
         g.push();
         g.noFill();
         g.stroke(255,255,255);
-        g.strokeWeight(4);
+        g.strokeWeight(2);
         /*
         g.translate(face.headCenter.x,face.headCenter.y,face.headCenter.z);
         //g.rotateY(face.direction);
@@ -739,7 +752,7 @@ function drawCoordinates(g){
 
 function drawVideoScreen(g){
   g.push();
-    g.strokeWeight(8);
+    g.strokeWeight(1);
     g.noFill();
     g.stroke(255,32,32);
 
@@ -751,7 +764,7 @@ function drawVideoScreen(g){
 
 function drawCamera(g){
     push();
-        g.strokeWeight(4);
+        g.strokeWeight(1);
         g.noFill();
         g.stroke(32,32,32);
         g.push();
@@ -768,7 +781,7 @@ function drawCamera(g){
 
 function drawLight(g){
     push();
-        g.strokeWeight(4);
+        g.strokeWeight(1);
         g.noFill();
         g.stroke(32,32,32);
         g.line(-lightLength/2,0,lightDistance,lightLength/2,0,lightDistance);
@@ -815,6 +828,7 @@ function intersect_point(point1, point2, point3, point4) {
    return [x, y]
  }
 
+ /*
  function intersect2(x1, y1, x2, y2, x3, y3, x4, y4){
     console.log ("x1:"+x1+" y1:"+y1);
     console.log ("x2:"+x2+" y2:"+y2);
@@ -876,6 +890,7 @@ function intersect(x1, y1, x2, y2, x3, y3, x4, y4) {
 
     return { x, y };
 }
+*/
 
 /*
 

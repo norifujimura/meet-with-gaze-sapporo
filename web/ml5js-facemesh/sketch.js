@@ -92,7 +92,7 @@ function setup() {
   
   //perspectiveBuffer.camera(0,0, 100, 0, 0, 0, 0, 1, 0);
   perspectiveBuffer.normalMaterial();
-  perspectiveBuffer.debugMode();
+  //perspectiveBuffer.debugMode();
 
   isometricBuffer = createGraphics(videoWidth, videoHeight,WEBGL);
   //isometricBuffer.debugMode();
