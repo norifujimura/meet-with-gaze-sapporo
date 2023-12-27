@@ -235,6 +235,12 @@ function draw() {
     drawLightBuffer();
   }
 
+  checkBTConnection();
+
+  sendLight();
+
+  //sendTest(true);
+
   // Paint the off-screen buffers onto the main canvas
   image(videoBuffer, 0, 0,displayWidth,displayHeight);
   image(perspectiveBuffer, 0, displayHeight,displayWidth,displayHeight);
@@ -327,23 +333,6 @@ function drawLightBuffer(){
     lightBuffer.fill(0,0,0);
     
     lightBuffer.text(isoMode, 0,50);
-
-    for (let i = 0; i < faces.length; i += 1) {
-        let face=faces[i];
-        
-        if(face.intersect == false){
-            continue;
-        }
-        
-        //lightBuffer.text(round(face.intersect.x), 0,100+50*i);
-        if(monitor == null){
-          monitor = document.getElementById("monitor");
-        }
-       var s=  round(face.intersect.x);
-       monitor.innerHTML = "value to send: "+s;
-        //document.getElementById("monitor").value = s;
-    }
-
     /*
     lightBuffer.background(32);
     lightBuffer.fill(182,177,153);
@@ -415,6 +404,25 @@ function drawLightBuffer(){
 
 }
 
+function sendLight(){
+  for (let i = 0; i < faces.length; i += 1) {
+    let face=faces[i];
+    
+    if(face.intersect == false){
+        continue;
+    }
+    
+    //lightBuffer.text(round(face.intersect.x), 0,100+50*i);
+    if(monitor == null){
+      monitor = document.getElementById("monitor");
+    }
+   var s=  round(face.intersect.x);
+   monitor.innerHTML = "value to send: "+s;
+   send(s);
+    //document.getElementById("monitor").value = s;
+  } 
+}
+
 
 //Calc intersection
 function checkIntersections(){
@@ -483,7 +491,7 @@ function processMesh(points){
   f.originalHeadWidth = dist(f.originalRight.x,f.originalRight.y,f.originalRight.z,f.originalLeft.x,f.originalLeft.y,f.originalLeft.z);
   f.ratio =  headWidth / f.originalHeadWidth;
 
-  console.log("headWith:"+ f.originalHeadWidth + " ratio:"+ f.ratio );
+  //console.log("headWidth:"+ f.originalHeadWidth + " ratio:"+ f.ratio );
 
   //calc point in 3D space
   for (let j = 0; j < f.originalPoints.length; j += 1) {

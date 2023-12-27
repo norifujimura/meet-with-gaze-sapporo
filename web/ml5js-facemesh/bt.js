@@ -1,3 +1,19 @@
+
+var characteristicOne,characteristicTwo;
+
+function checkBTConnection(){
+  if(characteristicOne==undefined){
+    document.getElementById("one").className = "btn btn-primary";
+  }else{
+    document.getElementById("one").className = "btn btn-success";
+  }
+  if(characteristicTwo==undefined){
+    document.getElementById("two").className = "btn btn-primary";
+  }else{
+    document.getElementById("two").className = "btn btn-success";
+  }
+}
+
 //BLE
 async function connect(isOne) {
 
@@ -57,7 +73,33 @@ async function connect(isOne) {
     console.log(msg);
   }
 
-  async function send(isOne){
+  async function send(v){
+    if(characteristicOne!=undefined){
+      console.log("send:"+v);
+
+      // -600 to + 600  to  -256 to +256
+
+      var ratio = 256/600;
+
+      var plusMinus= 0;
+      var value= 0;
+      if(v<0){
+        plusMinus= 1;
+        value = round(v * ratio * -1);
+      }else{
+        plusMinus= 2;
+        value = round(v * ratio);
+      }
+
+      let message = new Uint8Array([plusMinus,value]);
+      try {
+          await characteristicOne.writeValue(message);
+        } catch (error) {
+          log('Argh! ' + error);
+        }
+    }
+
+    /*
     var rgbw = this.rgbw;
 
     if(rgbw.w<255){
@@ -84,4 +126,29 @@ async function connect(isOne) {
         }
       }
     }
+    */
+  }
+
+  async function sendTest(isOne){
+    if(isOne){
+      if(characteristicOne!=undefined){
+        console.log("send One:1,2,3,4");
+        let message = new Uint8Array([1,2,3,4]);
+        try {
+            await characteristicOne.writeValue(message);
+          } catch (error) {
+            log('Argh! ' + error);
+          }
+      }
+    }else{
+      if(characteristicTwo!=undefined){
+        console.log("send Two:1,2,3,4");
+        let message = new Uint8Array([1,2,3,4]);
+        try {
+            await characteristicTwo.writeValue(message);
+          } catch (error) {
+            log('Argh! ' + error);
+          }
+      }
+    } 
   }

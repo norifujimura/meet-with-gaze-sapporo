@@ -1,8 +1,10 @@
 function intersect2(x1, y1, x2, y2, x3, y3, x4, y4){
+    /*
     console.log ("x1:"+x1+" y1:"+y1);
     console.log ("x2:"+x2+" y2:"+y2);
     console.log ("x3:"+x3+" y3:"+y3);
     console.log ("x4:"+x4+" y4:"+y4);
+    */
 
     let p1 = [x1,y1];
     let p2 = [x2,y2];
@@ -10,8 +12,8 @@ function intersect2(x1, y1, x2, y2, x3, y3, x4, y4){
     let p4 = [x4,y4];
 
     let result= intersect_point(p1,p2,p3,p4);
-    console.log ("INPUT x:"+p1[0]+" y:"+p1[1]);
-    console.log ("RESULT x:"+result[0]+" y:"+result[1]);
+    //console.log ("INPUT x:"+p1[0]+" y:"+p1[1]);
+    //console.log ("RESULT x:"+result[0]+" y:"+result[1]);
     return {x:result[0],z:result[1]};
  }
 
