@@ -1,6 +1,8 @@
 var mx,my,rx,ry;
 var state = "init";
 var socket;
+var timerThresh =5000;
+var connectTimerStartTime;
 
 function myLog(msg){
   console.log(msg);
@@ -10,17 +12,22 @@ function setup() {
   createCanvas(320,240);
   noStroke();
   rectMode(CENTER);
-  frameRate(20);
+  frameRate(10);
+  connect();
 }
 
 function connect(){
   socket = new WebSocket("ws://192.168.86.22:8888");
+  state = "connecting";
+  document.getElementById("monitorOne").innerHTML = "Connecting";
+
 
   socket.addEventListener("open", (event) => {
     socket.send("Hello Server!");
     state = "connected";
 
-    document.getElementById("socket").className = "btn btn-success";
+    //document.getElementById("socket").className = "btn btn-success";
+    document.getElementById("monitorOne").innerHTML = "Connected";
   });
 
     // Listen for messages
@@ -29,29 +36,41 @@ function connect(){
     receive(event.data);
   });
 
+  socket.addEventListener("close", () => {
+    state = "closed";
+    document.getElementById("monitorOne").innerHTML = "Closed";
+  });
+
+  socket.addEventListener("error", (error) =>  {
+    state = "error";
+    document.getElementById("monitorOne").innerHTML = "Error:"+error.data;
+  });
+
 }
 
 function draw() {
 
-  mx = round(mouseX-160);
-  my = round(mouseY-120);
+
   background(230);
-  fill(244, 122, 158);
-  rect(mx+160, my+120, 10,10);
+
+  if(0<mouseX && mouseX<320 && 0<mouseY && mouseY<240){
+    mx = round(mouseX-160);
+    my = round(mouseY-120);
+    fill(244, 122, 158);
+    rect(mx+160, my+120, 10,10);
+    sendData();
+  }
 
   fill(158, 122, 244);
   rect(rx+160, ry+120, 10,10);
 
-  sendData();
+
 }
 
 function sendData(){
   //myLog("sendData");
-  if(monitor == null){
-    monitor = document.getElementById("monitor");
-  }
 
-  monitor.innerHTML = "value to send: "+mx+":"+my;
+  document.getElementById("monitorTwo").innerHTML = "value to send: "+mx+":"+my;
   //sendOne(mx+160, my+120);
   if(state == "connected"){
     send(mx, my);

@@ -22,7 +22,7 @@ DynamicJsonDocument doc(1024);
 //SSID of your network
 char ssid[] = "akiko_network";
 //password of your WPA Network
-char pwd[] = "secretPassword";
+char pwd[] = "akobagus";
 
 int x,y;
 
@@ -56,15 +56,15 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 			//webSocket.sendTXT("Connected");
 			break;
 		case WStype_TEXT:
-			Serial.printf("[WSc] get text: %s\n", payload);
+			//Serial.printf("[WSc] get text: %s\n", payload);
         parseReceivedJson(payload);
         //ref https://note.com/katsushun89/n/nbd3201ed7536
 
         x = doc["x"];
         y = doc["y"];
       
-        showValue();
-        sendAlive();
+        //showValue();
+        //sendAlive();
 			break;
 		case WStype_BIN:
 		case WStype_ERROR:			
@@ -94,7 +94,7 @@ void setupWiFi()
 
  Serial.println("Connected to Wifi, Connecting to server.");
 	// server address, port and URL
-	webSocket.begin("192.168.10.11", 8080, "/");
+	webSocket.begin("192.168.86.22", 8888, "/");
 
 	// event handler
 	webSocket.onEvent(webSocketEvent);
@@ -124,9 +124,10 @@ void setup() {
 }
 
 void loop() {
-  delay(50);
+  delay(0);
   webSocket.loop();
-  M5.update();
+  //M5.update();
+  showValue();
 }
 
 
