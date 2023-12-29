@@ -1,8 +1,7 @@
 var mx,my,rx,ry;
 var state = "init";
 var socket;
-var timerThresh =5000;
-var connectTimerStartTime;
+var id;//for interval check
 
 function myLog(msg){
   console.log(msg);
@@ -13,21 +12,41 @@ function setup() {
   noStroke();
   rectMode(CENTER);
   frameRate(10);
+  id = setInterval(check, 1000);
   connect();
 }
+
+function check(){
+  var now = socket.readyState;
+  if(now == 0){
+    document.getElementById("socket").innerHTML = "WS Connecting";
+  }
+  if(now == 1){
+    document.getElementById("socket").innerHTML = "WS Open";
+  }
+  if(now == 2){
+    document.getElementById("socket").innerHTML = "WS Closing";
+  }
+  if(now == 3){
+    document.getElementById("socket").innerHTML = "WS Closed";
+    if(state == "closed"){
+      connect();
+    }
+  }
+}
+
 
 function connect(){
   socket = new WebSocket("ws://192.168.86.22:8888");
   state = "connecting";
-  document.getElementById("monitorOne").innerHTML = "Connecting";
-
+  document.getElementById("state").innerHTML = "Connecting";
 
   socket.addEventListener("open", (event) => {
     socket.send("Hello Server!");
     state = "connected";
 
     //document.getElementById("socket").className = "btn btn-success";
-    document.getElementById("monitorOne").innerHTML = "Connected";
+    document.getElementById("state").innerHTML = "Connected";
   });
 
     // Listen for messages
@@ -38,12 +57,12 @@ function connect(){
 
   socket.addEventListener("close", () => {
     state = "closed";
-    document.getElementById("monitorOne").innerHTML = "Closed";
+    document.getElementById("state").innerHTML = "Closed";
   });
 
   socket.addEventListener("error", (error) =>  {
     state = "error";
-    document.getElementById("monitorOne").innerHTML = "Error:"+error.data;
+    document.getElementById("state").innerHTML = "Error:"+error.data;
   });
 
 }
@@ -70,7 +89,7 @@ function draw() {
 function sendData(){
   //myLog("sendData");
 
-  document.getElementById("monitorTwo").innerHTML = "value to send: "+mx+":"+my;
+  document.getElementById("message").innerHTML = "value to send: "+mx+":"+my;
   //sendOne(mx+160, my+120);
   if(state == "connected"){
     send(mx, my);
