@@ -52,8 +52,56 @@ void parseReceivedJson2(char json[]){
 
 }
 
+void showWiFiState(){
+  //https://www.arduino.cc/reference/en/libraries/wifi/wifi.status/
+
+  M5.Lcd.setTextSize(2);
+
+  M5.Lcd.setCursor(0, 240-220);
+  M5.Lcd.print(ssid);
+
+  M5.Lcd.setCursor(0, 240-200);
+
+  if(WiFi.status() == WL_CONNECTED) {
+    M5.Lcd.print("WL_CONNECTED");
+  }
+
+  if(WiFi.status() == WL_IDLE_STATUS) {
+    M5.Lcd.print("WL_IDLE_STATUS");
+  }
+
+  if(WiFi.status() == WL_CONNECT_FAILED) {
+    M5.Lcd.print("WL_CONNECT_FAILED");
+  }
+
+  if(WiFi.status() == WL_CONNECTION_LOST) {
+    M5.Lcd.print("WL_CONNECTION_LOST");
+  }
+
+  if(WiFi.status() == WL_DISCONNECTED) {
+    M5.Lcd.print("WL_DISCONNECTED");
+  }
+
+  if(WiFi.status() == WL_NO_SSID_AVAIL) {
+    M5.Lcd.print("WL_NO_SSID_AVAIL");
+  }
+
+  if(WiFi.status() == WL_SCAN_COMPLETED) {
+    M5.Lcd.print("WL_SCAN_COMPLETED");
+  }
+}
+
+void showWsState(){
+  //https://www.arduino.cc/reference/en/libraries/wifi/wifi.status/
+
+  M5.Lcd.setTextSize(2);
+
+  M5.Lcd.setCursor(0, 240-180);
+  M5.Lcd.print(wsState);
+}
+
 void showValue(){
-  M5.Lcd.clear();
+
   M5.Lcd.fillRect(x+160, y+120, 4, 4, WHITE);
 
   M5.Lcd.setCursor(0, 240-40);

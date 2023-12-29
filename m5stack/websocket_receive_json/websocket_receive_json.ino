@@ -15,6 +15,7 @@
 // https://www.uuidgenerator.net/
 
 WebSocketsClient webSocket;
+String wsState;
 
 //JSON
 DynamicJsonDocument doc(1024);
@@ -41,6 +42,8 @@ static void showRGBW();
 static void setLight();
 */
 static void showValue();
+static void showWiFiState();
+static void showWsState();
 static void parseReceivedJson(uint8_t *payload);
 static void parseReceivedJson2(uint8_t *payload);
 static void sendAlive();
@@ -50,10 +53,12 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 	switch(type) {
 		case WStype_DISCONNECTED:
 			Serial.printf("[WSc] Disconnected!\n");
+      wsState = "WStype_DISCONNECTED";
 			break;
 		case WStype_CONNECTED:
 			Serial.printf("[WSc] Connected to url: %s\n", payload);
 			//webSocket.sendTXT("Connected");
+      wsState = "WStype_CONNECTED";
 			break;
 		case WStype_TEXT:
 			//Serial.printf("[WSc] get text: %s\n", payload);
@@ -62,16 +67,24 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 
         x = doc["x"];
         y = doc["y"];
+
+        wsState = "WStype_TEXT";
       
         //showValue();
         //sendAlive();
 			break;
 		case WStype_BIN:
-		case WStype_ERROR:			
+      wsState = "WStype_BIN";
+		case WStype_ERROR:	
+      wsState = "WStype_ERROR";		
 		case WStype_FRAGMENT_TEXT_START:
+      wsState = "WStype_FRAGMENT_TEXT_START";	
 		case WStype_FRAGMENT_BIN_START:
+      wsState = "WStype_FRAGMENT_BIN_START";	
 		case WStype_FRAGMENT:
+      wsState = "WStype_FRAGMENT";
 		case WStype_FRAGMENT_FIN:
+      wsState = "WStype_FRAGMENT_FIN";
 			break;
 	}
 }
@@ -103,7 +116,7 @@ void setupWiFi()
 	//webSocket.setAuthorization("user", "Password");
 
 	// try ever 5000 again if connection has failed
-	webSocket.setReconnectInterval(5000);
+	webSocket.setReconnectInterval(1000);
 }
 
 
@@ -127,6 +140,9 @@ void loop() {
   delay(0);
   webSocket.loop();
   //M5.update();
+  M5.Lcd.clear();
+  showWiFiState();
+  showWsState();
   showValue();
 }
 
