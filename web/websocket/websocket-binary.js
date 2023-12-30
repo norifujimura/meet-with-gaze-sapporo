@@ -46,7 +46,8 @@ function check(){
 }
 
 function connect(){
-  socket = new WebSocket("ws://192.168.86.22:8888");
+  //socket = new WebSocket("ws://192.168.86.22:8888");
+  socket = new WebSocket("ws://localhost:8888");
   socket.binaryType = "arraybuffer";
 
   state = "connecting";
@@ -146,14 +147,18 @@ function sendData(r,g,b){
   if(state == "connected"){
     sByteArray.fill(0);
 
-    sByteArray[mx*4] = r;
-    sByteArray[mx*4+1] = g;
-    sByteArray[mx*4+2] = b;
+    for(let i =0;i<mx;i++){
+      sByteArray[i*4] = r;
+      sByteArray[i*4+1] = g;
+      sByteArray[i*4+2] = b;
+    }
 
     myLog("Send length:"+sByteArray.length);
+
     for(let i=0;i<l;i++){
       myLog(sByteArray[i]+",");
     }
+
     socket.send(sByteArray.buffer);
   }
 }
