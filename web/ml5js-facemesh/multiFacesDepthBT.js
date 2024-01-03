@@ -15,13 +15,21 @@ let displayRatio = 0.4;
 let angleOfView = 78;
 */
 
+//Sanwa 120degrees camera
+
+let videoWidth = 1920;
+let videoHeight =1080;
+let displayRatio = 0.4;
+let angleOfView = 120;
+
 
 //Apple facetime camera on M1 macbook pro
-
+/*
 let videoWidth = 640;
 let videoHeight = 480;
 let displayRatio = 1;
 let angleOfView = 54;
+*/
 
 
 let displayWidth;
@@ -145,7 +153,7 @@ function setup() {
 
   //video = createCapture(VIDEO);
   video = createCapture(constraints);
-  //video.size(videoWidth, videoHeight);
+  video.size(videoWidth, videoHeight);
 
   facemesh = ml5.facemesh(video, options,modelReady);
 
@@ -235,7 +243,7 @@ function draw() {
     drawLightBuffer();
   }
 
-  checkBTConnection();
+  //checkBTConnection();
 
   sendLight();
 
@@ -319,7 +327,7 @@ function drawIsometricBuffer(){
   //drawCamera(isometricBuffer);
   drawLight(isometricBuffer);
 
-  drawIntersections(isometricBuffer);
+  //drawIntersections(isometricBuffer);
   //drawCenteredMesh(isometricBuffer);
   //drawPoints(isometricBuffer);
   //drawLed(isometricBuffer);
@@ -418,7 +426,7 @@ function sendLight(){
     }
    var s=  round(face.intersect.x);
    monitor.innerHTML = "value to send: "+s;
-   send(s);
+   //send(s);
     //document.getElementById("monitor").value = s;
   } 
 }

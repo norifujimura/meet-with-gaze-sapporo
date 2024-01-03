@@ -15,14 +15,20 @@ let displayRatio = 0.5;
 let angleOfView = 78;
 */
 
+//Sanwa camera
+/*
+let videoWidth = 1920;
+let videoHeight =1080;
+let displayRatio = 0.4;
+let angleOfView = 150;
+*/
 
 //Apple facetime camera on M1 macbook pro
 
 let videoWidth = 640;
 let videoHeight = 480;
-let displayRatio = 1;
+let displayRatio = 0.4;
 let angleOfView = 54;
-
 
 let displayWidth;
 let displayHeight;
@@ -89,7 +95,7 @@ const options = {
 let headWidth = 157;//mm  https://www.airc.aist.go.jp/dhrt/head/index.html
 
 function setup() {
-
+  frameRate(20);
   //calc camera disnace to the 1pix=1mmm screen
   angleMode(DEGREES);
   //if angle is 54:
@@ -110,7 +116,7 @@ function setup() {
 
   perspectiveBuffer = createGraphics(videoWidth, videoHeight,WEBGL);
   perspectiveBuffer.normalMaterial();
-  perspectiveBuffer.debugMode();
+  //perspectiveBuffer.debugMode();
 
   isometricBuffer = createGraphics(videoWidth, videoHeight,WEBGL);
   isometricBuffer.normalMaterial();
@@ -128,11 +134,21 @@ function setup() {
           label:'16MP USB Camera'
         },
         */
-       /*
+       
         label:{
-          exact:'16MP USB Camera'
+          //exact:'1MP USB Camera'
+          exact:'USB Camera'
+        },
+        
+
+        //facingMode: "user",
+
+        /*
+        facingMode: {
+          exact: "environment"
         },
         */
+        
         mandatory: {
           minWidth: videoWidth,
           minHeight: videoHeight
@@ -205,6 +221,8 @@ function mouseClicked() {
 function draw() {
 
   console.log("predictions length:"+predictions.length);
+  console.log("capture w:"+video.width);
+  console.log("capture h:"+video.height);
   //perspectiveBuffer.orbitControl();
   //isometricBuffer.orbitControl();
   //normlizeScaledMesh();

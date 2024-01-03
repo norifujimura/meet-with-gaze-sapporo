@@ -2,18 +2,19 @@ let faceapi;
 let video;
 let detections;
 
-let videoWidth = 1920;
-let videoHeight =1080;
+let videoWidth = 640;
+let videoHeight =480;
 
 var videoBuffer;
 
 // by default all options are set to true
 const detectionOptions = {
   withLandmarks: true,
-  withDescriptors: false,
+  withDescriptors: true,
 };
 
 function setup() {
+  console.log("setup()");
   //createCanvas(360, 270);
 
   createCanvas(videoWidth, videoHeight);
@@ -68,8 +69,9 @@ function gotResults(err, result) {
   image(video, 0, 0, width, height);
   if (detections) {
     if (detections.length > 0) {
-      // console.log(detections)
+      
       drawBox(detections);
+      drawParts(detections);
       drawLandmarks(detections);
     }
   }
@@ -92,11 +94,45 @@ function drawBox(detections) {
 }
 
 function drawLandmarks(detections) {
+
+  ellipseMode(CENTER);
+  fill(100);
+  stroke(100);
+
+  for (let i = 0; i < detections.length; i += 1) {
+    console.log(detections[i]);
+    var detection = detections[i];
+    for (let j = 0; j < detection.landmarks.positions.length; j += 1) {
+      var position = detection.landmarks.positions[j];
+
+      //0 and 16 for ears
+      //30 for nose tip
+
+      if(j==0 || j== 16){
+        fill(255);
+        stroke(255);
+        ellipse(position.x, position.y, 4, 4);
+      }else if(j==30){
+        fill(255,0,0);
+        stroke(255,0,0);
+        ellipse(position.x, position.y, 4, 4);
+      }else{
+        fill(100);
+        stroke(100);
+        ellipse(position.x, position.y, 2, 2);
+      }
+      
+    }
+  }
+}
+
+function drawParts(detections) {
   noFill();
   stroke(161, 95, 251);
   strokeWeight(2);
 
   for (let i = 0; i < detections.length; i += 1) {
+    console.log(detections[i]);
     const mouth = detections[i].parts.mouth;
     const nose = detections[i].parts.nose;
     const leftEye = detections[i].parts.leftEye;

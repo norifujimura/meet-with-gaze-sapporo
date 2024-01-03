@@ -24,7 +24,8 @@ DynamicJsonDocument doc(1024);
 uint8_t* bin;
 
 //SSID of your network
-char ssid[] = "Opportunity";
+//char ssid[] = "Opportunity";
+char ssid[] = "akiko_network";
 //password of your WPA Network
 char pwd[] = "akobagus";
 

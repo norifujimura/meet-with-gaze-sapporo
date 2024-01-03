@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@tensorflow-models/facemesh": "^0.0.5",
     "bootstrap": "^5.3.2",
     "ml5": "^0.12.2",
     "p5": "^1.9.0"
