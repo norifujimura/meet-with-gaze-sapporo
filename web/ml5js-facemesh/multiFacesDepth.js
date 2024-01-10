@@ -24,7 +24,6 @@ let angleOfView = 150;
 */
 
 //Apple facetime camera on M1 macbook pro
-
 let videoWidth = 640;
 let videoHeight = 480;
 let displayRatio = 0.4;

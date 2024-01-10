@@ -1,26 +1,61 @@
 let faceapi;
 let video;
 let detections;
+let isUpdate = true;
 
 var videoBuffer;
+var perspectiveBuffer;
+var isometricBuffer;
+var lightBuffer;
+var isoCam,persCam;
+var zoom = 1.0;
 
+//Logitech camera
+/*
+let videoWidth = 1920;
+let videoHeight =1080;
+let displayRatio = 0.5;
+let angleOfView = 78;
+*/
+
+//Sanwa camera
+/*
+let videoWidth = 1920;
+let videoHeight =1080;
+let displayRatio = 0.4;
+let angleOfView = 150;
+*/
+
+//Apple facetime camera on M1 macbook pro
 let videoWidth = 640;
-let videoHeight =480;
+let videoHeight = 480;
+let displayRatio = 0.75;
+let angleOfView = 54;
 
-var stats;
+let displayWidth;
+let displayHeight;
+
+
+//Screen means where 1pixel equals phisical 1mm
+let screenDistance = 0;//screenDistance will be calculated in Setup()
+let lightDistance = 100;//distance from zero point to LED bar
+let eyeLineLength = 4000;//400cm
+let lightLength = 1000;//100cm
 
 let faces=[];
-let flipY = true;
+let isFlipY = true;
 
-//let canvas, ctx;
+var stats;//for stats UI
 
-//var videoBuffer;
+let state = 'init';//init,video, perspective,iso,light
+
+let headWidth = 157;//mm  https://www.airc.aist.go.jp/dhrt/head/index.html
 
 // relative path to your models from window.location.pathname
 const detectionOptions = {
   withLandmarks: true,
   withDescriptors: false,
-  minConfidence: 0.1,
+  minConfidence: 0.75,
   Mobilenetv1Model: "models",
   FaceLandmarkModel: "models",
   FaceRecognitionModel: "models",
@@ -28,20 +63,42 @@ const detectionOptions = {
 
 function setup() {
   console.log("setup()");
-  frameRate(40);
+  frameRate(30);
   angleMode(DEGREES);
 
   stats = new Stats();
   stats.showPanel(0);// 0: fps, 1: ms, 2: mb, 3+: custom
   document.body.appendChild( stats.dom );
 
-  createCanvas(videoWidth, videoHeight);
+  //screen: where 1pixel corresponds 1mm
+  //
+  screenDistance = (videoWidth/2.0)/tan(angleOfView/2.0);
+
+  displayWidth = videoWidth * displayRatio;
+  displayHeight = videoHeight* displayRatio;
+
+  createCanvas(displayWidth*2, displayHeight*2);
+
   videoBuffer = createGraphics(videoWidth, videoHeight);
 
-  //canvas = createCanvas(videoWidth, videoHeight);
-  //ctx = canvas.getContext("2d");
+  perspectiveBuffer = createGraphics(videoWidth, videoHeight,WEBGL);
+  perspectiveBuffer.normalMaterial();
+  //perspectiveBuffer.debugMode();
 
-  //videoBuffer = createGraphics(videoWidth, videoHeight);
+  persCam = perspectiveBuffer.createCamera();
+  persCam.setPosition(0,0,-screenDistance);
+  persCam.lookAt(0, 0, 0);
+
+  isometricBuffer = createGraphics(videoWidth, videoHeight,WEBGL);
+  isometricBuffer.normalMaterial();
+
+  isoCam= isometricBuffer.createCamera();
+  isoCam.ortho(-videoWidth,videoWidth,-videoHeight,videoHeight,0,10000);
+  isoCam.setPosition(-1000,-1000,1000);
+  //isoCam.lookAt(0, 0, 500);
+  isoCam.lookAt(0, 0, 0);
+
+  lightBuffer = createGraphics(videoWidth, videoHeight);
 
   var constraints = {
     video: {
@@ -70,13 +127,15 @@ function setup() {
   video.hide(); // Hide the video element, and just show the canvas
   faceapi = ml5.faceApi(video, detectionOptions, modelReady);
 
-  textAlign(RIGHT);
+  textAlign(CENTER);
 }
 
 function modelReady() {
   console.log("ready!");
   console.log(faceapi);
-  faceapi.detect(gotResults);
+  message("Model is ready");
+  state = 'video';
+  //faceapi.detect(gotResults);
 }
 
 function draw(){
@@ -85,37 +144,35 @@ function draw(){
   //console.log("capture h:"+video.height);
 
   stats.begin();
-  faceapi.detect(gotResults);
-
-  if(flipY){
-    videoBuffer.push();
-    videoBuffer.scale(-1, 1);
-    videoBuffer.image(video, -videoWidth, 0);
-    videoBuffer.pop();
-    //videoBuffer.image(video, 0, 0, videoWidth, videoHeight);
-  }else{
-    videoBuffer.image(video, 0, 0, videoWidth, videoHeight);
+  if(!isUpdate){
+    faces = [];
+    stats.end();
+    return;
   }
+  //faceapi.detect(gotResults);
   
   if(detections!=undefined){
-    
     if (detections.length > 0) {
       console.log("defections length:"+detections.length);
-      drawBox(videoBuffer);
-      drawParts(videoBuffer);
-      drawLandmarks(videoBuffer);
-
       processDetections();
-
-      drawOrientations(videoBuffer);
     }
   }
 
+  drawVideoBuffer();
+  drawPerspectiveBuffer();
+  drawIsometricBuffer();
+  drawLightBuffer();
+
   // Paint the off-screen buffers onto the main canvas
-  image(videoBuffer, 0, 0,videoWidth,videoHeight);
-
+  image(videoBuffer, 0, 0,displayWidth,displayHeight);
+  image(perspectiveBuffer, 0, displayHeight,displayWidth,displayHeight);
+  image(isometricBuffer, displayWidth, 0,displayWidth,displayHeight);
+  image(lightBuffer, displayWidth,displayHeight,displayWidth,displayHeight);
   //detections = undefined;
-
+  //this should be at the end of the loop to make it optimized. 
+  //Give detector a room to culc before next loop starts.
+  isUpdate = false;
+  faceapi.detect(gotResults);
   stats.end();
 }
 
@@ -127,13 +184,103 @@ function gotResults(err, result) {
   }
   // console.log(result)
   detections = result;
+  isUpdate = true;
 }
+
+function drawVideoBuffer(){
+
+  if(isFlipY){
+    videoBuffer.push();
+    videoBuffer.scale(-1, 1);
+    videoBuffer.image(video, -videoWidth, 0);
+    videoBuffer.pop();
+    //videoBuffer.image(video, 0, 0, videoWidth, videoHeight);
+  }else{
+    videoBuffer.image(video, 0, 0, videoWidth, videoHeight);
+  }
+
+  drawBox(videoBuffer);
+  //drawParts(videoBuffer);
+  drawLandmarks(videoBuffer);
+  drawOrientations(videoBuffer);
+}
+
+//Perspective
+function drawPerspectiveBuffer(){
+  //draw center point
+  perspectiveBuffer.background(220);
+  perspectiveBuffer.translate(0,0,0);
+  perspectiveBuffer.box(10);
+  //
+
+  drawCoordinates(perspectiveBuffer);
+  drawVideoScreen(perspectiveBuffer);
+  drawCamera(perspectiveBuffer);
+
+  drawFaceBoxes(perspectiveBuffer);
+  
+  //drawMeshOriginalPoints(perspectiveBuffer);
+  /*
+  drawMeshPoints(perspectiveBuffer);
+  drawFaceBoxes(perspectiveBuffer);
+  drawEyeLines(perspectiveBuffer);
+  */
+  
+  //drawMeshsOriginal(perspectiveBuffer);
+  //drawKeyPoints(perspectiveBuffer);
+  //drawFaceBoxes(perspectiveBuffer);
+  //drawEyes(perspectiveBuffer);
+  //drawCenteredMesh(perspectiveBuffer);
+  //drawPoints(perspectiveBuffer);
+}
+
+//Isometric
+function drawIsometricBuffer(){
+  isometricBuffer.background(220);
+  isometricBuffer.translate(0,0,0);
+  isometricBuffer.box(10);
+
+  drawCoordinates(isometricBuffer);
+  drawVideoScreen(isometricBuffer);
+  drawCamera(isometricBuffer);
+
+  drawFaceBoxes(isometricBuffer);
+
+  //drawMeshOriginalPoints(isometricBuffer);
+  /*
+  drawMeshPoints(isometricBuffer);
+  drawFaceBoxes(isometricBuffer);
+  drawEyeLines(isometricBuffer);
+  */
+
+  //drawMeshs(isometricBuffer);
+  //drawFaceBoxes(isometricBuffer);
+  //drawEyes(isometricBuffer);
+  //drawCamera(isometricBuffer);
+
+  //drawLight(isometricBuffer);
+
+  //drawIntersections(isometricBuffer);
+
+  //drawCenteredMesh(isometricBuffer);
+  //drawPoints(isometricBuffer);
+  //drawLed(isometricBuffer);
+}
+
+function drawLightBuffer(){
+}
+
+
 
 function processDetections(){
   faces=[];
   for (let i = 0; i < detections.length; i += 1) {
     faces.push(processDetection(detections[i]));
   }
+}
+
+function flipY(value){
+  return videoWidth - value;
 }
 
 function processDetection(detection){
@@ -144,33 +291,38 @@ function processDetection(detection){
   f.box.two.w = alignedRect._box._width;
   f.box.two.h = alignedRect._box._height;
 
-  if(flipY){
-    f.box.two.x = videoWidth - alignedRect._box._x - f.box.two.w;
+  if(isFlipY){
+    f.box.two.x = flipY(alignedRect._box._x + f.box.two.w);
   }else{
     f.box.two.x = alignedRect._box._x;
   }
   f.box.two.y = alignedRect._box._y;
 
-  if(flipY){
-    f.rightEar.x = videoWidth - detection.landmarks.positions[0].x;
-  }else{
-    f.rightEar.x = detection.landmarks.positions[0].x;
-  }
-  f.rightEar.y = detection.landmarks.positions[0].y;
-  
-  if(flipY){
-    f.leftEar.x = videoWidth - detection.landmarks.positions[16].x;
-  }else{
-    f.leftEar.x = detection.landmarks.positions[16].x;
-  }
-  f.leftEar.y = detection.landmarks.positions[16].y;
+  //landmarks
+  for (let j = 0; j < detection.landmarks.positions.length; j += 1) {
+    var position = detection.landmarks.positions[j];
 
-  if(flipY){
-    f.noseTip.x = videoWidth - detection.landmarks.positions[30].x;
-  }else{
-    f.noseTip.x = detection.landmarks.positions[30].x;
+    var tempX =0;
+    var tempY = detection.landmarks.positions[j].y;
+    if(isFlipY){
+      tempX = flipY(detection.landmarks.positions[j].x);
+    }else{
+      tempX = detection.landmarks.positions[j].x;
+    }
+
+    f.landmarks.push({x:tempX,y:tempY});
+
+    //0 and 16 for ears
+    //30 for nose tip
+
+    if(j==0){
+      f.rightEar = {x:tempX,y:tempY};
+    }else if(j==16){
+      f.leftEar = {x:tempX,y:tempY};
+    }else if(j==30){
+      f.noseTip = {x:tempX,y:tempY};
+    }
   }
-  f.noseTip.y = detection.landmarks.positions[30].y;
 
   //var w = leftEar.x - rightEar.x;
   f.center.two.x = (f.rightEar.x + f.leftEar.x)/2.0;
@@ -178,29 +330,43 @@ function processDetection(detection){
   
   f.width.original = dist(f.rightEar.x,f.rightEar.y,f.leftEar.x,f.leftEar.y);
 
-  //atan2(y, x);
-  /*
+  //calc rotation
+  var x = f.center.two.x - f.rightEar.x;
+  var y = f.center.two.x - f.noseTip.x;
+  f.rotation =  -1* atan2(y,x) + 180.0;
   
-  var x = f.center.two.x - rightEar.x;
-  var y = f.center.two.x - noseTip.x;
-  */
+  //calc true width 
+  //trueW = originalW / cosTheta
+  f.width.two = f.width.original / cos(f.rotation);
 
-  
-  if(f.noseTip.x < f.center.two.x ){
-    //right plus case
-    var x = f.center.two.x - f.rightEar.x;
-    var y = f.center.two.x - f.noseTip.x;
-    f.rotation = atan2(y,x);
-  }else if(f.noseTip.x > f.center.two.x ){
-    //left minus case
-    var x = f.leftEar.x - f.center.two.x;
-    var y = f.noseTip.x - f.center.two.x;
-    f.rotation = -1.0 * atan2(y,x);
-  }else{
-    f.rotation = 0;
-  }
+  //ThreeD
+
+  f.ratio =  headWidth / f.width.two;
+  console.log("headWith:"+ f.originalHeadWidth + " ratio:"+ f.ratio );
+
+  //convert ml5js coordinates to video and  p5js coordinates
+  var twoX = f.center.two.x - videoWidth/2;
+  var twoY = f.center.two.y - videoHeight/2;
+
+  f.center.three.x = twoX * f.ratio;
+  f.center.three.y = twoY * f.ratio;
+  f.center.three.z = screenDistance * f.ratio;
 
   return f;
+}
+
+function drawFaceBoxes(g) {
+  g.angleMode(DEGREES);
+  for (let i = 0; i < faces.length; i += 1) {
+      let face=faces[i];
+      g.push();
+        g.noFill();
+        g.stroke(127,127,127);
+        g.translate(face.center.three.x,face.center.three.y,face.center.three.z);
+        g.rotateY(face.rotation);
+        g.box(headWidth);
+      g.pop();
+  }
 }
 
 function drawOrientations(g){
@@ -217,16 +383,19 @@ function drawOrientations(g){
     g.noStroke();
     g.circle(f.center.two.x, f.center.two.y, 6, 6);
 
-    console.log("rot:"+f.rotation)
+    //console.log("rot:"+f.rotation)
 
     g.push();
       g.angleMode(DEGREES);
       g.translate(f.box.two.x, f.box.two.y);
+      g.rect(0, 2, f.width.two, 4);
+
       g.rotate(f.rotation);
 
       g.noFill();
       g.stroke(255,127,127);
       g.strokeWeight(2);
+
       g.rect(-5, 0, 10, 30);
     g.pop();
   }
@@ -239,6 +408,8 @@ function drawBox(g) {
     g.stroke(161, 95, 251);
     g.strokeWeight(2);
     g.rect(f.box.two.x, f.box.two.y, f.box.two.w, f.box.two.h);
+    g.textSize(20);
+    g.text(f.rotation, f.box.two.x+100, f.box.two.y+100);
   }
 }
 
@@ -248,77 +419,28 @@ function drawLandmarks(g) {
   g.fill(100);
   g.noStroke();
 
-  for (let i = 0; i < detections.length; i += 1) {
-    //console.log(detections[i]);
-    var detection = detections[i];
-    for (let j = 0; j < detection.landmarks.positions.length; j += 1) {
-      var position = detection.landmarks.positions[j];
-
-      var tempX =0;
-      var tempY = detection.landmarks.positions[j].y;
-      if(flipY){
-        tempX = videoWidth - detection.landmarks.positions[j].x;
-      }else{
-        tempX = detection.landmarks.positions[j].x;
-      }
-
+  for (let i = 0; i < faces.length; i += 1) {
+    var f = faces[i];
+    for (let j = 0; j < f.landmarks.length; j += 1) {
+      var pos = f.landmarks[j];
       //0 and 16 for ears
       //30 for nose tip
 
       if(j==0 || j== 16){
         g.fill(255);
         //g.stroke(255);
-        g.ellipse(tempX,tempY, 4, 4);
+        g.ellipse(pos.x,pos.y, 4, 6);
       }else if(j==30){
         g.fill(255,0,0);
         //stroke(255,0,0);
-        g.ellipse(tempX,tempY, 4, 4);
+        g.ellipse(pos.x,pos.y, 4, 6);
       }else{
-        g.fill(100);
+        g.fill(127);
         //stroke(100);
-        g.ellipse(tempX, tempY, 4, 4);
+        g.ellipse(pos.x, pos.y, 4, 6);
       }
-      
     }
   }
 }
 
-function drawParts(g) {
-  g.noFill();
-  g.stroke(161, 95, 251);
-  g.strokeWeight(2);
 
-  for (let i = 0; i < detections.length; i += 1) {
-    //console.log(detections[i]);
-    const mouth = detections[i].parts.mouth;
-    const nose = detections[i].parts.nose;
-    const leftEye = detections[i].parts.leftEye;
-    const rightEye = detections[i].parts.rightEye;
-    const rightEyeBrow = detections[i].parts.rightEyeBrow;
-    const leftEyeBrow = detections[i].parts.leftEyeBrow;
-
-    drawPart(g,mouth, true);
-    drawPart(g,nose, false);
-    drawPart(g,leftEye, true);
-    drawPart(g,leftEyeBrow, false);
-    drawPart(g,rightEye, true);
-    drawPart(g,rightEyeBrow, false);
-  }
-}
-
-function drawPart(g,feature, closed) {
-  g.beginShape();
-  for (let i = 0; i < feature.length; i += 1) {
-    const x = feature[i]._x;
-    const y = feature[i]._y;
-    //const z = feature[i]._z;
-    //console.log("z:"+z)
-    g.vertex(x, y);
-  }
-
-  if (closed === true) {
-    g.endShape(CLOSE);
-  } else {
-    g.endShape();
-  }
-}
