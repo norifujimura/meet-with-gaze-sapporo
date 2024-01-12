@@ -155,6 +155,7 @@ function draw(){
     if (detections.length > 0) {
       console.log("defections length:"+detections.length);
       processDetections();
+      calcIntersections();
     }
   }
 
@@ -329,6 +330,7 @@ function processDetection(detection){
   f.center.two.y = (f.rightEar.y + f.leftEar.y)/2.0;
   
   f.width.original = dist(f.rightEar.x,f.rightEar.y,f.leftEar.x,f.leftEar.y);
+  
 
   //calc rotation
   var x = f.center.two.x - f.rightEar.x;
@@ -338,11 +340,12 @@ function processDetection(detection){
   //calc true width 
   //trueW = originalW / cosTheta
   f.width.two = f.width.original / cos(f.rotation);
+  f.height.two = f.box.two.h;
 
   //ThreeD
-
   f.ratio =  headWidth / f.width.two;
-  console.log("headWith:"+ f.originalHeadWidth + " ratio:"+ f.ratio );
+  
+  //console.log("headWidth:"+ f.width.two + " ratio:"+ f.ratio );
 
   //convert ml5js coordinates to video and  p5js coordinates
   var twoX = f.center.two.x - videoWidth/2;
@@ -352,19 +355,36 @@ function processDetection(detection){
   f.center.three.y = twoY * f.ratio;
   f.center.three.z = screenDistance * f.ratio;
 
+  f.height.three = f.height.two / f.ratio;
+
+  f.eyeLine.deltax = cos(f.rotation) * eyeLineLength;
+  f.eyeLine.deltaz = sin(f.rotation) * eyeLineLength;
+
+  f.eyeLine.x = f.center.three.x + f.eyeLine.deltax;
+  f.eyeLine.y = 0;
+  f.eyeLine.z = f.center.three.z + f.eyeLine.deltaz;
+
   return f;
+}
+
+//Calc intersection
+function calcIntersections(){
+  for (let i = 0; i < faces.length; i += 1) {
+      let face=faces[i];
+      face.intersect = calcIntersect(-lightLength/2,lightDistance,lightLength/2,lightDistance,face.center.three.x,face.center.three.z,face.eyeLine.x,face.eyeLine.z);
+  }
 }
 
 function drawFaceBoxes(g) {
   g.angleMode(DEGREES);
   for (let i = 0; i < faces.length; i += 1) {
-      let face=faces[i];
+      let f=faces[i];
       g.push();
         g.noFill();
         g.stroke(127,127,127);
-        g.translate(face.center.three.x,face.center.three.y,face.center.three.z);
-        g.rotateY(face.rotation);
-        g.box(headWidth);
+        g.translate(f.center.three.x,f.center.three.y,f.center.three.z);
+        g.rotateY(f.rotation);
+        g.box(headWidth,f.height.three,headWidth);
       g.pop();
   }
 }
@@ -442,5 +462,7 @@ function drawLandmarks(g) {
     }
   }
 }
+
+
 
 
