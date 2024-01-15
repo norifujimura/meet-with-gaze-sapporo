@@ -37,7 +37,7 @@ function check(){
 
 
 function connect(){
-  socket = new WebSocket("ws://192.168.86.22:8888");
+  socket = new WebSocket("ws://192.168.86.21:8889");
   state = "connecting";
   document.getElementById("state").innerHTML = "Connecting";
 
