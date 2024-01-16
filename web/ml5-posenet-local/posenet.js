@@ -21,19 +21,20 @@ let angleOfView = 78;
 */
 
 //Sanwa camera
-/*
+
 let videoWidth = 1920;
 let videoHeight =1080;
 let displayRatio = 0.4;
 let angleOfView = 120;
-*/
+
 
 //Apple facetime camera on M1 macbook pro
-
+/*
 let videoWidth = 640;
 let videoHeight = 480;
 let displayRatio = 0.75;
 let angleOfView = 54;
+*/
 
 var fiveMetersDistance;
 var fiveMetersHeight;
@@ -54,6 +55,7 @@ let isUpdated = true;
 var stats;//for stats UI
 
 let headWidth = 157;//mm  https://www.airc.aist.go.jp/dhrt/head/index.html
+let faceWidthThreshold = 50;
 
 function setup() {
     console.log("setup()");
@@ -120,11 +122,26 @@ function setup() {
         audio: false
     };
 
+    var options = {
+        architecture: 'MobileNetV1',
+        imageScaleFactor: 0.3,
+        outputStride: 16,
+        flipHorizontal: false,
+        minConfidence: 0.75,
+        maxPoseDetections: 5,
+        scoreThreshold: 0.9,
+        nmsRadius: 20,
+        detectionType: 'multiple',
+        inputResolution: 513,
+        multiplier: 0.75,
+        quantBytes: 2, 
+    }
+
     //video = createCapture(VIDEO);
     video = createCapture(constraints);
 
     // Create a new poseNet method with a single detection
-    poseNet = ml5.poseNet(video, {outputStride:8, quantBytes:4}, modelReady);
+    poseNet = ml5.poseNet(video, options, modelReady);
     // This sets up an event that fills the global variable "poses"
     // with an array every time new poses are detected
     poseNet.on('pose', function(results) {
@@ -222,6 +239,12 @@ function drawVideoBuffer(){
     }else{
         videoBuffer.image(video, 0, 0, videoWidth, videoHeight);
     }
+
+    videoBuffer.rectMode(CENTER);
+    videoBuffer.noFill();
+    videoBuffer.stroke(127,127,127,200);
+    videoBuffer.strokeWeight(2);
+    videoBuffer.rect(videoWidth/2, videoHeight/2, faceWidthThreshold, faceWidthThreshold);
 
     drawLandmarks(videoBuffer);
     drawParts(videoBuffer);
@@ -342,7 +365,10 @@ function processDetections(){
     faces=[];
     console.log("processDetections()"+poses.length);
     for (let i = 0; i < poses.length; i += 1) {
-        faces.push(processDetection(poses[i]));
+        var face = processDetection(poses[i]);
+        if(face!=null){
+            faces.push(face);
+        }
     }
     console.log("processDetections() faces"+faces.length);
 }
@@ -417,8 +443,12 @@ function processDetection(pose){
     f.center.three.z = screenDistance * f.ratio;
   
     f.height.three = f.height.two / f.ratio;
+
+    if(f.width.two>faceWidthThreshold){
+        return f;
+    }
   
-    return f;
+    return null;
   }
 
 
