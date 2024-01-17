@@ -4,6 +4,9 @@ var faceClass = class{
     this.isValid = true;
     this.ratio = 0;
 
+    this.intersect={x:0,y:0,z:0};
+    this.hasInterset= false;
+
     this.landmarks=[];
     this.rightEar={x:0,y:0};
     this.leftEar={x:0,y:0};
@@ -419,15 +422,29 @@ function calcIntersections(){
   for (let i = 0; i < faces.length; i += 1) {
     let f=faces[i];
     if(f.isValid){  
-        let rot = f.rotation.raw+180;
+        //let rot = f.rotation.raw+180;
+        let rot = f.rot+180;
         f.eyeLine.deltax = sin(rot) * eyeLineLength;
         f.eyeLine.deltaz = cos(rot) * eyeLineLength;
       
+        /*
         f.eyeLine.x = f.center.three.x + f.eyeLine.deltax;
         f.eyeLine.y = 0;
         f.eyeLine.z = f.center.three.z + f.eyeLine.deltaz;
+        */
+
+        f.eyeLine.x = f.x + f.eyeLine.deltax;
+        f.eyeLine.y = 0;
+        f.eyeLine.z = f.z + f.eyeLine.deltaz;
+
         //calcIntersect(x1, y1, x2, y2, x3, y3, x4, y4)
-        f.intersect = calcIntersect(-lightLength/2,lightDistance,lightLength/2,lightDistance,f.center.three.x,f.center.three.z,f.eyeLine.x,f.eyeLine.z);
+        //f.intersect = calcIntersect(-lightLength/2,lightDistance,lightLength/2,lightDistance,f.center.three.x,f.center.three.z,f.eyeLine.x,f.eyeLine.z);
+        f.intersect = calcIntersect(-lightLength/2,lightDistance,lightLength/2,lightDistance,f.x,f.z,f.eyeLine.x,f.eyeLine.z);
+        if(f.intersect == 0){
+          f.hasIntersect = false;
+        }else{
+          f.hasIntersect = true;
+        }
     }
   }
 }

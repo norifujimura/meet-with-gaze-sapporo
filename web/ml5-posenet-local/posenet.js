@@ -36,6 +36,7 @@ let videoHeight = 480;
 let displayRatio = 0.75;
 let angleOfView = 54;
 
+
 var fiveMetersDistance;
 var fiveMetersHeight;
 
@@ -46,7 +47,7 @@ let displayHeight;
 let screenDistance = 0;//screenDistance will be calculated in Setup()
 let lightDistance = -100;//distance from zero point to LED bar
 let eyeLineLength = 5000;//500cm
-let lightLength = 1000;//100cm
+//let lightLength = 1000;//100cm
 
 let faces=[];
 let isFlipY = true;
@@ -55,7 +56,7 @@ let isUpdated = true;
 var stats;//for stats UI
 
 //let headWidth = 157;//mm  https://www.airc.aist.go.jp/dhrt/head/index.html
-let headWidth = 180;//mm  https://www.airc.aist.go.jp/dhrt/head/index.html
+let headWidth = 220;//mm  https://www.airc.aist.go.jp/dhrt/head/index.html
 let faceWidthThreshold = 50;
 
 function setup() {
@@ -156,6 +157,9 @@ function setup() {
     });
     // Hide the video element, and just show the canvas
     video.hide();
+
+    //servers
+    setupBinaryServer();
 }
 
 function modelReady() {
@@ -249,7 +253,9 @@ function drawPerspectiveBuffer(){
 function drawLightBuffer(){
     //draw center point
     lightBuffer.background(127);
-    lightBuffer.translate(0,0,0);
+    //lightBuffer.translate(0,0,0);
+    drawSendData(lightBuffer);
+    drawRCVData(lightBuffer);
 }
 
 /*
@@ -422,6 +428,9 @@ function processDetection(index){
     }else{
         f.isValid = true;
     }
+
+    //Light and servers
+    processLight();
   
   }
 
