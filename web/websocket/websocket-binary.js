@@ -47,7 +47,7 @@ function check(){
 
 function connect(){
   //socket = new WebSocket("ws://192.168.86.22:8888");
-  socket = new WebSocket("ws://localhost:8888");
+  socket = new WebSocket("ws://localhost:8889");
   socket.binaryType = "arraybuffer";
 
   state = "connecting";

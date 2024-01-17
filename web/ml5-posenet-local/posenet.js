@@ -9,6 +9,7 @@ let poses = [];
 var videoBuffer;
 var perspectiveBuffer;
 var isometricBuffer;
+var lightBuffer;
 var isoCam,persCam;
 var zoom = 1.0;
 
@@ -21,20 +22,19 @@ let angleOfView = 78;
 */
 
 //Sanwa camera
-
+/*
 let videoWidth = 1920;
 let videoHeight =1080;
-let displayRatio = 0.4;
+let displayRatio = 0.5;
 let angleOfView = 120;
-
+*/
 
 //Apple facetime camera on M1 macbook pro
-/*
+
 let videoWidth = 640;
 let videoHeight = 480;
 let displayRatio = 0.75;
 let angleOfView = 54;
-*/
 
 var fiveMetersDistance;
 var fiveMetersHeight;
@@ -54,12 +54,13 @@ let isUpdated = true;
 
 var stats;//for stats UI
 
-let headWidth = 157;//mm  https://www.airc.aist.go.jp/dhrt/head/index.html
+//let headWidth = 157;//mm  https://www.airc.aist.go.jp/dhrt/head/index.html
+let headWidth = 180;//mm  https://www.airc.aist.go.jp/dhrt/head/index.html
 let faceWidthThreshold = 50;
 
 function setup() {
     console.log("setup()");
-    frameRate(30);
+    //frameRate(30);
     angleMode(DEGREES);
     textAlign(CENTER);
 
@@ -72,12 +73,12 @@ function setup() {
     screenDistance = (videoWidth/2.0)/tan(angleOfView/2.0);
     fiveMetersDistance = 2500 /tan(angleOfView/2.0);
     fiveMetersHeight = 5000 * videoHeight / videoWidth;
-    document.getElementById("message2").textContent  = "5meter depth:"+ fiveMetersDistance;
+    document.getElementById("message2").textContent  = "Screen depth:"+screenDistance+"5meter depth:"+ fiveMetersDistance;
 
     displayWidth = videoWidth * displayRatio;
     displayHeight = videoHeight* displayRatio;
 
-    createCanvas(displayWidth*2, displayHeight*2);
+    createCanvas(displayWidth, displayHeight*3);
 
     videoBuffer = createGraphics(videoWidth, videoHeight);
 
@@ -86,12 +87,15 @@ function setup() {
     //perspectiveBuffer.debugMode();
   
     persCam = perspectiveBuffer.createCamera();
+    persCam.ortho(-videoWidth*2,videoWidth*2,-videoHeight*2,videoHeight*2,0,20000);
     persCam.setPosition(0,-2000,0.1);
+    //persCam.setPosition(0,2000,2000);
     persCam.lookAt(0, 0.1, 0);
     //persCam.setPosition(-1000,-1000,1000);
     //isoCam.lookAt(0, 0, 500);
     //persCam.lookAt(0, 0, 0);
   
+    /*
     isometricBuffer = createGraphics(videoWidth, videoHeight,WEBGL);
     isometricBuffer.normalMaterial();
   
@@ -100,8 +104,10 @@ function setup() {
     isoCam.setPosition(-6000,-6000,6000);
     //isoCam.lookAt(0, 0, 500);
     isoCam.lookAt(0, 0, 0);
-  
+    */
 
+    lightBuffer = createGraphics(videoWidth, videoHeight);
+  
     var constraints = {
     video: {
         /*
@@ -160,13 +166,12 @@ function mousePressed(){
   console.log(JSON.stringify(poses))
 }
 
-
 function draw() {
     stats.begin();
 
     if(!isUpdated){
         poses = [];
-        stats.end();
+        //stats.end();
         return;
     }
 
@@ -174,58 +179,25 @@ function draw() {
         if (poses.length > 0) {
             console.log("defections length:"+poses.length);
             processDetections();
-            //calcIntersections();
+            calcIntersections();
+        }else if (poses.length == 0){
+            faces = [];
         }
     }
 
     drawVideoBuffer();
-    //drawPerspectiveBuffer();
+    drawPerspectiveBuffer();
     //drawIsometricBuffer();
+    drawLightBuffer();
 
     // Paint the off-screen buffers onto the main canvas
     image(videoBuffer, 0, 0,displayWidth,displayHeight);
-    //image(perspectiveBuffer, 0, displayHeight,displayWidth,displayHeight);
+    image(perspectiveBuffer, 0, displayHeight,displayWidth,displayHeight);
     //image(isometricBuffer, displayWidth, 0,displayWidth,displayHeight);
+    image(lightBuffer, 0, displayHeight*2,displayWidth,displayHeight);
 
     //faceapi.detect(gotResults);
     stats.end();
-
-    /*
-  videoBuffer.image(video, 0, 0, videoWidth, videoHeight);
-  strokeWeight(2);
-  image(videoBuffer, 0, 0,videoWidth/2,videoHeight/2);
-
-  // For one pose only (use a for loop for multiple poses!)
-  if (poses.length > 0) {
-    const pose = poses[0].pose;
-
-    // Create a pink ellipse for the nose
-    fill(213, 0, 143);
-    const nose = pose.nose;
-    ellipse(nose.x/2, nose.y/2, 10, 10);
-
-    // Create a yellow ellipse for the right eye
-    fill(255, 215, 0);
-    const rightEye = pose.rightEye;
-    ellipse(rightEye.x/2, rightEye.y/2, 10, 10);
-
-    // Create a yellow ellipse for the right eye
-    fill(255, 215, 0);
-    const leftEye = pose.leftEye;
-    ellipse(leftEye.x/2, leftEye.y/2, 10, 10);
-
-    // Create a blue ellipse for the right ear
-    fill(0, 215, 255);
-    const rightEar = pose.rightEar;
-    ellipse(rightEar.x/2, rightEar.y/2, 10, 10);
-
-    // Create a blue ellipse for the left ear
-    fill(0, 215, 255);
-    const leftEar = pose.leftEar;
-    ellipse(leftEar.x/2, leftEar.y/2, 10, 10);
-  }
-  */
-
 }
 
 function drawVideoBuffer(){
@@ -242,7 +214,7 @@ function drawVideoBuffer(){
 
     videoBuffer.rectMode(CENTER);
     videoBuffer.noFill();
-    videoBuffer.stroke(127,127,127,200);
+    videoBuffer.stroke(127,255,127,200);
     videoBuffer.strokeWeight(2);
     videoBuffer.rect(videoWidth/2, videoHeight/2, faceWidthThreshold, faceWidthThreshold);
 
@@ -250,80 +222,6 @@ function drawVideoBuffer(){
     drawParts(videoBuffer);
     drawBox(videoBuffer);
     drawOrientations(videoBuffer);
-}
-
-function drawLandmarks(g) {
-    g.ellipseMode(CENTER);
-    g.noStroke();
-    g.fill(200);
-
-    //console.log("drawLandmarks():faces:"+ faces.length);
-    for (let i = 0; i < faces.length; i += 1) {
-        var f = faces[i];
-        for (let j = 0; j < f.landmarks.length; j += 1) {
-            var pos = f.landmarks[j];
-            g.ellipse(pos.x,pos.y, 4, 4);
-        }
-    }
-}
-
-function drawParts(g) {
-    g.ellipseMode(CENTER);
-    g.noStroke();
-    g.fill(255);
-    //console.log("drawLandmarks():faces:"+ faces.length);
-    for (let i = 0; i < faces.length; i += 1) {
-        var f = faces[i];
-        g.fill(255,0,0);
-        g.ellipse(f.noseTip.x,f.noseTip.y, 6, 6);
-        g.fill(255);
-        g.ellipse(f.leftEar.x,f.leftEar.y, 6, 6);
-        g.ellipse(f.rightEar.x,f.rightEar.y, 6, 6);
-        g.fill(0,255,255);
-        g.ellipse(f.leftEye.x,f.leftEye.y, 6, 6);
-        g.ellipse(f.rightEye.x,f.rightEye.y, 6, 6);
-    }
-}
-
-function drawBox(g) {
-    g.rectMode(CENTER);
-    for (let i = 0; i < faces.length; i += 1) {
-      var f = faces[i];
-      g.noFill();
-      g.stroke(127,127,127,200);
-      g.strokeWeight(2);
-      g.rect(f.center.two.x, f.center.two.y, f.width.two, f.height.two);
-      g.fill(255,255,255);
-      g.noStroke();
-      g.textSize(20);
-      g.text(round(f.rotation), f.center.two.x, f.center.two.y);
-    }
-  }
-
-function drawOrientations(g){
-    for (let i = 0; i < faces.length; i += 1) {
-
-        var f = faces[i];
-
-        g.noFill();
-        g.stroke(255,127,127);
-        g.strokeWeight(2);
-        g.circle(f.center.two.x,f.center.two.y, 60, 60);
-        //console.log("rot:"+f.rotation)
-
-        g.push();
-            g.angleMode(DEGREES);
-            g.translate(f.center.two.x, f.center.two.y);
-
-            g.rotate(f.rotation);
-
-            g.noFill();
-            g.stroke(255,127,127);
-            g.strokeWeight(2);
-
-            g.rect(0, 15, 10, 30);
-        g.pop();
-    }
 }
 
 //Perspective
@@ -339,12 +237,22 @@ function drawPerspectiveBuffer(){
     drawCamera(perspectiveBuffer);
     drawLight(perspectiveBuffer);
 
+    //drawTheta(perspectiveBuffer);
+
     drawFaceBoxes(perspectiveBuffer);
     drawEyeLines(perspectiveBuffer);
     drawIntersections(perspectiveBuffer);
 
 }
 
+//Light
+function drawLightBuffer(){
+    //draw center point
+    lightBuffer.background(127);
+    lightBuffer.translate(0,0,0);
+}
+
+/*
 //Isometric
 function drawIsometricBuffer(){
     isometricBuffer.background(220);
@@ -360,16 +268,42 @@ function drawIsometricBuffer(){
     drawEyeLines(isometricBuffer);
     drawIntersections(isometricBuffer);
 }
+*/
 
 function processDetections(){
-    faces=[];
+    //faces=[];
     console.log("processDetections()"+poses.length);
+    /*
     for (let i = 0; i < poses.length; i += 1) {
         var face = processDetection(poses[i]);
         if(face!=null){
             faces.push(face);
         }
     }
+    */
+   if(poses.length>0){
+    //for now. Adjust one per frame
+    if(poses.length>faces.length){
+        //in case poses are more than faces
+        //add one face
+        var f = new faceClass();
+        faces.push(f);
+    }else if (poses.length<faces.length){
+        //in case poses are less than faces
+        //reduce one face
+        faces.shift();
+    }
+    
+    //loop to process detections: poses to update faces
+    //processDetection(poses[0]);
+    for (let i = 0; i < poses.length; i += 1) {
+        processDetection(i);
+    }
+   }else if(poses.length == 0){
+    //reset faces
+    faces = [];  
+   }
+
     console.log("processDetections() faces"+faces.length);
 }
 
@@ -377,10 +311,31 @@ function flipY(value){
     return videoWidth - value;
 }
 
-function processDetection(pose){
-    let f = new faceClass();
+function processDetection(index){
+
+    //var f;
+
+    /*
+    if(faces.length == 0){
+        console.log("pD; new");
+        f = new faceClass();
+        faces.push(f);
+    }else{
+        console.log("pD; exist and length:"+faces.length);
+        f = faces[0];
+    }
+    */
+
+    var f = faces[index];
+    var pose = poses[index];
+
+    if(f==undefined){
+        return;
+    }
 
     //landmarks
+    f.landmarks = [];
+
     var keypoints = pose.pose.keypoints;
     jsonString = JSON.stringify(keypoints);
     console.log("processDetection() keypoints:"+keypoints.length);
@@ -422,11 +377,11 @@ function processDetection(pose){
     //calc rotation
     var x = f.center.two.x - f.rightEar.x;
     var y = f.center.two.x - f.noseTip.x;
-    f.rotation =  -1* atan2(y,x) + 180.0;
-    
+    f.rotation.raw =  -1* atan2(y,x) + 180.0;
+
     //calc true width 
     //trueW = originalW / cosTheta
-    f.width.two = f.width.original / cos(f.rotation);
+    f.width.two = f.width.original / cos(f.rotation.raw);
     f.height.two = f.width.two;
   
     //ThreeD
@@ -444,19 +399,29 @@ function processDetection(pose){
   
     f.height.three = f.height.two / f.ratio;
 
-    if(f.width.two>faceWidthThreshold){
-        return f;
+    //adjust for lens
+    //get theta of center and camera
+    var thetaOne = atan2(f.center.three.z,f.center.three.x);
+    console.log("Theta:"+thetaOne);
+    f.thetaOne = thetaOne;
+    f.thetaTwo = (-(f.thetaOne-90));
+    f.rotation.adjusted = f.rotation.raw + f.thetaTwo;
+
+    //normalize
+    var rot = f.rotation.adjusted;
+    if(180<=rot && rot<=360){
+        //180 to 360  to  -180 to 0  
+        rot = rot-360;
+    }
+
+    f.setValues(rot,f.center.three.x,f.center.three.y,f.center.three.z);
+
+
+    if(f.width.two<faceWidthThreshold){
+        f.isValid = false;
+    }else{
+        f.isValid = true;
     }
   
-    return null;
   }
-
-
-
-
-
-
-
-
-
 

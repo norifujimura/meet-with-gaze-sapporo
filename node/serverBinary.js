@@ -1,7 +1,7 @@
 //import WebSocket, { WebSocketServer } from 'ws';
 
 const server = require('ws').Server;
-const wss = new server({ port: 8888 });
+const wss = new server({ port: 8889 });
 //ws.binaryType = 'arraybuffer';
 
 //https://github.com/websockets/ws?tab=readme-ov-file#sending-binary-data

@@ -1,11 +1,14 @@
 var faceClass = class{
   constructor(){
     this.name = "face";
+    this.isValid = true;
     this.ratio = 0;
 
     this.landmarks=[];
     this.rightEar={x:0,y:0};
     this.leftEar={x:0,y:0};
+    this.rightEye={x:0,y:0};
+    this.leftEye={x:0,y:0};
     this.noseTip={x:0,y:0};
     this.eyeLine ={x:0,y:0};
 
@@ -13,13 +16,6 @@ var faceClass = class{
         two:{x:0,y:0},
         three:{x:0,y:0,z:0}
     };
-
-    /*
-    this.corner = {
-        two:{x:0,y:0},
-        three:{x:0,y:0,z:0}
-    };
-    */
 
     this.box = {
       two:{x:0,y:0,w:0,h:0}
@@ -34,10 +30,60 @@ var faceClass = class{
       two:0,
       three:0
     };
-    this.rotation = 0;
+    this.rotation ={
+      raw:0,
+      adjusted:0
+    }
 
     this.eyeLine = [];
+
+    this.averageLimit = 6;
+    this.rot = 0;
+    this.x = 0;
+    this.y = 0;
+    this.z = 0;
+
+    this.rots = [];
+    this.xs= [];
+    this.ys = [];
+    this.zs = [];
   }
+
+  setValues(rt,xt,yt,zt){
+    this.rots.push(rt);
+    if(this.rots.length>this.averageLimit){
+      this.rots.shift();
+    }
+    this.rot = this.average(this.rots);
+
+    this.xs.push(xt);
+    if(this.xs.length>this.averageLimit){
+      this.xs.shift();
+    }
+    this.x = this.average(this.xs);
+
+    this.ys.push(yt);
+    if(this.ys.length>this.averageLimit){
+      this.ys.shift();
+    }
+    this.y = this.average(this.ys);
+
+    this.zs.push(zt);
+    if(this.zs.length>this.averageLimit){
+      this.zs.shift();
+    }
+    this.z = this.average(this.zs);
+    console.log("setValues:"+this.zs.length)
+  }
+
+  average(array) {
+    var result = 0, index = 0;
+    for (index in array) {
+      result = result + array[index];
+    }
+    return result / array.length;
+  };
+
   /*
   constructor(){
     this.videoPoints = [];
@@ -189,7 +235,112 @@ function drawLight(g){
       g.box(10);
     g.pop();  
   }
-  
+}
+
+function drawTheta(g){
+  g.angleMode(DEGREES);
+  for (let i = 0; i < faces.length; i += 1) {
+      let f=faces[i];
+    g.push();
+      g.strokeWeight(10);
+      g.noFill();
+      g.stroke(255,127,127,127);
+      g.rotateY(-f.thetaOne);
+      g.line(0,0,0,1000,0,0);
+    g.pop();
+    g.push();
+      g.strokeWeight(10);
+      g.noFill();
+      g.stroke(127,255,127,127);
+      g.translate(f.center.three.x,f.center.three.y,f.center.three.z);
+      g.rotateY(90);
+      g.line(0,0,0,1000,0,0);
+    g.pop();
+    g.push();
+      g.strokeWeight(20);
+      g.noFill();
+      g.stroke(127,127,255,127);
+      g.translate(f.center.three.x,f.center.three.y,f.center.three.z);
+      g.rotateY(90+f.thetaTwo);
+      g.line(0,0,0,1000,0,0);
+    g.pop();
+  }
+}
+
+
+function drawFaceBoxes(g) {
+  g.angleMode(DEGREES);
+  for (let i = 0; i < faces.length; i += 1) {
+      let f=faces[i];
+      if(f.isValid){
+        g.push();
+          g.noFill();
+          g.strokeWeight(10);
+          g.stroke(200,127,127,127);
+          g.translate(f.center.three.x,f.center.three.y,f.center.three.z);
+          g.rotateY(f.rotation.raw);
+          g.box(headWidth,f.height.three,headWidth);
+        g.pop();
+        g.push();
+          g.noFill();
+          g.strokeWeight(10);
+          g.stroke(127,200,127,127);
+          g.translate(f.center.three.x,f.center.three.y,f.center.three.z);
+          g.rotateY(f.rotation.adjusted);
+          g.box(headWidth,f.height.three,headWidth);
+        g.pop();
+        
+        g.push();
+          g.noFill();
+          g.strokeWeight(20);
+          g.stroke(127,127,200,127);
+          g.translate(f.x,f.y,f.z);
+          g.rotateY(f.rot);
+          g.box(headWidth,f.height.three,headWidth);
+        g.pop();
+      }
+  }
+}
+
+function drawEyeLines(g){
+  //let length = 10000;
+  for (let i = 0; i < faces.length; i += 1) {
+      let f=faces[i];
+      if(f.isValid){
+        g.push();
+          g.noFill();
+          g.stroke(200,127,127,127);
+          g.strokeWeight(4);
+
+          g.translate(f.center.three.x,f.center.three.y,f.center.three.z);
+          g.rotateY(f.rotation.raw+180);
+          g.line(0,0,0,0,0,eyeLineLength);
+          //g.line(f.center.three.x,f.center.three.y,f.center.three.z,f.eyeLine.x,0,f.eyeLine.z);
+        g.pop();
+
+        g.push();
+          g.noFill();
+          g.stroke(127,200,127,127);
+          g.strokeWeight(4);
+
+          g.translate(f.center.three.x,f.center.three.y,f.center.three.z);
+          g.rotateY(f.rotation.adjusted+180);
+          g.line(0,0,0,0,0,eyeLineLength);
+          //g.line(f.center.three.x,f.center.three.y,f.center.three.z,f.eyeLine.x,0,f.eyeLine.z);
+        g.pop();
+
+        g.push();
+          g.noFill();
+          g.stroke(127,127,200,127);
+          g.strokeWeight(10);
+
+          g.translate(f.x,f.y,f.z);
+          g.rotateY(f.rot+180);
+          g.line(0,0,0,0,0,eyeLineLength);
+          //g.line(f.center.three.x,f.center.three.y,f.center.three.z,f.eyeLine.x,0,f.eyeLine.z);
+        g.pop();
+      }
+  }
 }
 
 function drawPoint(g,p,size){
@@ -205,19 +356,20 @@ function drawPoint(g,p,size){
 
 function drawIntersections(g){
   for (let i = 0; i < faces.length; i += 1) {
-      let face=faces[i];
-      if(face.intersect == false){
-          continue;
+      let f=faces[i];
+      if(f.isValid){
+        if(f.intersect == false){
+            continue;
+        }
+        console.log("Intersect x:"+f.intersect.x+" z:"+f.intersect.z);
+        push();
+            g.stroke(0,0,0);
+            g.fill(200,200,200);
+            drawPoint(g,{x:f.intersect.x,y:0,z:f.intersect.z},40);
+        pop(); 
       }
-      console.log("Intersect x:"+face.intersect.x+" z:"+face.intersect.z);
-      push();
-          g.stroke(0,0,0);
-          g.fill(200,200,200);
-          drawPoint(g,{x:face.intersect.x,y:0,z:face.intersect.z},40);
-      pop(); 
   }
 }
-
 
 
 /*
@@ -261,6 +413,24 @@ function drawPart(g,feature, closed) {
   }
 }
 */
+
+//Calc intersection
+function calcIntersections(){
+  for (let i = 0; i < faces.length; i += 1) {
+    let f=faces[i];
+    if(f.isValid){  
+        let rot = f.rotation.raw+180;
+        f.eyeLine.deltax = sin(rot) * eyeLineLength;
+        f.eyeLine.deltaz = cos(rot) * eyeLineLength;
+      
+        f.eyeLine.x = f.center.three.x + f.eyeLine.deltax;
+        f.eyeLine.y = 0;
+        f.eyeLine.z = f.center.three.z + f.eyeLine.deltaz;
+        //calcIntersect(x1, y1, x2, y2, x3, y3, x4, y4)
+        f.intersect = calcIntersect(-lightLength/2,lightDistance,lightLength/2,lightDistance,f.center.three.x,f.center.three.z,f.eyeLine.x,f.eyeLine.z);
+    }
+  }
+}
 
 function calcIntersect(x1, y1, x2, y2, x3, y3, x4, y4){
   /*
