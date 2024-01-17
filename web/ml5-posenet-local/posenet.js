@@ -22,19 +22,20 @@ let angleOfView = 78;
 */
 
 //Sanwa camera
-/*
+
 let videoWidth = 1920;
 let videoHeight =1080;
 let displayRatio = 0.5;
 let angleOfView = 120;
-*/
+
 
 //Apple facetime camera on M1 macbook pro
-
+/*
 let videoWidth = 640;
 let videoHeight = 480;
 let displayRatio = 0.75;
 let angleOfView = 54;
+*/
 
 
 var fiveMetersDistance;
@@ -45,7 +46,7 @@ let displayHeight;
 
 //Screen means where 1pixel equals phisical 1mm
 let screenDistance = 0;//screenDistance will be calculated in Setup()
-let lightDistance = -100;//distance from zero point to LED bar
+let lightDistance = 500;//distance from zero point to LED bar
 let eyeLineLength = 5000;//500cm
 //let lightLength = 1000;//100cm
 
@@ -61,7 +62,7 @@ let faceWidthThreshold = 50;
 
 function setup() {
     console.log("setup()");
-    //frameRate(30);
+    frameRate(20);
     angleMode(DEGREES);
     textAlign(CENTER);
 

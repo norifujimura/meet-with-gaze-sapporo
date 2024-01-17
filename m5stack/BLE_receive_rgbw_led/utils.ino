@@ -14,9 +14,9 @@ void showRGBW(){
     whiteColor = M5.Lcd.color565(w,w,w);
     
     uint16_t blended = 0;
-    blended = M5.Lcd.alphaBlend(128, rgbColor, whiteColor);
+    //blended = M5.Lcd.alphaBlend(128, rgbColor, whiteColor);
   
-    M5.Lcd.fillRect(0,40, 320, 240-82, blended); 
+    M5.Lcd.fillRect(0,40, 320, 240-82, whiteColor); 
 }
 
 void showName(){
