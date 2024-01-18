@@ -2,8 +2,8 @@
     Based on Neil Kolban example for IDF: https://github.com/nkolban/esp32-snippets/blob/master/cpp_utils/tests/BLE%20Tests/SampleWrite.cpp
     Ported to Arduino ESP32 by Evandro Copercini
 */
-#include <M5Unified.h>
-//#include <M5Core2.h>
+//#include <M5Unified.h>
+#include <M5Core2.h>
 #include <Adafruit_NeoPixel.h>
 
 #include <WiFi.h>
@@ -86,6 +86,7 @@ void webSocketEvent(WStype_t type, uint8_t* payload, size_t length) {
       break;
     case WStype_BIN:
       showValue(payload, length);
+      showLED(payload, length);
       wsState = "WStype_BIN";
       break;
       //
@@ -143,7 +144,7 @@ void setup() {
   b = 0;
   w = 255;
 
-  setLight();
+  //setLight();
 
   delay(500);
 

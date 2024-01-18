@@ -431,7 +431,7 @@ function processDetection(index){
     }
 
     //Light and servers
-    processLight();
+    //processLight();
   
   }
 

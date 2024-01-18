@@ -5,13 +5,16 @@ var stateBinary = "init";
 let port = 8889;
 var socketBinary;
 var idBinary;//for interval check
+var idSend;
 
 var sByteArray = new Uint8Array(lightNum);
 var rByteArray = new Uint8Array(lightNum);
 var rDataView;
 
 function setupBinaryServer() {
-    id = setInterval(checkBinary, 1000);
+    idBinary = setInterval(checkBinary, 1000);
+    idSend = setInterval(processLight, 100);
+
     connectBinary();
 
     sByteArray.fill(0);

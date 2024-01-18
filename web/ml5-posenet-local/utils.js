@@ -40,7 +40,7 @@ var faceClass = class{
 
     this.eyeLine = [];
 
-    this.averageLimit = 6;
+    this.averageLimit = 10;
     this.rot = 0;
     this.x = 0;
     this.y = 0;
