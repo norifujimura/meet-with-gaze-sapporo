@@ -27,7 +27,7 @@ void setup() {
    M5.begin();
 
   // initialize serial:
-  Serial.begin(9600);
+  Serial.begin(115200);
   // reserve 200 bytes for the inputString:
   inputString.reserve(200);
 

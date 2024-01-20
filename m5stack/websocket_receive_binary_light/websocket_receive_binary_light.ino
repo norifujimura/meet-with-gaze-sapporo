@@ -24,8 +24,8 @@ String wsState;
 uint8_t* bin;
 
 //SSID of your network
-char ssid[] = "Opportunity";
-//char ssid[] = "akiko_network";
+//char ssid[] = "Opportunity";
+char ssid[] = "akiko_network";
 //password of your WPA Network
 char pwd[] = "akobagus";
 
@@ -33,8 +33,6 @@ int x, y;
 int r, g, b, w;
 
 int count = 0;
-
-
 
 //bool isReceived=false;
 
@@ -121,8 +119,8 @@ void setupWiFi() {
 
   Serial.println("Connected to Wifi, Connecting to server.");
   // server address, port and URL
-  //webSocket.begin("192.168.86.22", 8888, "/");
-  webSocket.begin("172.20.10.4", 8889, "/");
+  webSocket.begin("192.168.86.21", 8889, "/");
+  //webSocket.begin("172.20.10.4", 8889, "/");
 
   // event handler
   webSocket.onEvent(webSocketEvent);

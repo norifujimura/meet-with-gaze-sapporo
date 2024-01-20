@@ -49,14 +49,27 @@ const onW = (e) =>{
 
 function draw(){
     console.log("Draw");
+    /*
     const data = new Uint8Array([r, g, b, w]); // hello
     //await writer.write(data);
     if(writer!=null){
         writer.write(data);
     }
+    */
+}
+
+async function sendButton(){
+    if(writer!=null){
+        //writer.write("TestPrint\n");
+        const data = new Uint8Array([104, 101, 108, 108, 111,10]); // hello
+        await writer.write(data);
+
+    }
 }
 
 async function closePort(){
+
+
     writer.close();
     writer.forget();
 }
@@ -70,11 +83,18 @@ async function openPort(){
     const { usbProductId, usbVendorId } = port.getInfo();
     console.log("usbProductId "+usbProductId);
     console.log("usbVendorId "+usbVendorId);
-    await port.open({ baudRate: 250000 });
+    await port.open({ baudRate: 115200});
 
     //const writer = port.writable.getWriter();
 
     writer = port.writable.getWriter();
+
+    const data = new Uint8Array([104, 101, 108, 108, 111,10]); // hello
+    await writer.write(data);
+
+
+    // Allow the serial port to be closed later.
+    //writer.releaseLock();
 
     //const data = new Uint8Array([104, 101, 108, 108]); // hello
     //await writer.write(data);
