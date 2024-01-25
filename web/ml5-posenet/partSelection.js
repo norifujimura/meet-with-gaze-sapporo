@@ -11,8 +11,8 @@ PoseNet example using p5.js
 let video;
 let poseNet;
 let poses = [];
-let videoWidth = 1920;
-let videoHeight =1080;
+let videoWidth = 720;
+let videoHeight =480;
 
 var videoBuffer;
 

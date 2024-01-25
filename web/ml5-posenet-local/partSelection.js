@@ -11,12 +11,13 @@ PoseNet example using p5.js
 let video;
 let poseNet;
 let poses = [];
-let videoWidth = 1920;
-let videoHeight =1080;
+let videoWidth = 640;
+let videoHeight =480;
 
 var videoBuffer;
 
 function setup() {
+  frameRate(5);
   createCanvas(videoWidth, videoHeight);
 
   videoBuffer = createGraphics(videoWidth, videoHeight);

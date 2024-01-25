@@ -22,20 +22,19 @@ let angleOfView = 78;
 /*
 let videoWidth = 1920;
 let videoHeight =1080;
-*/
-let videoWidth = 1920;
-let videoHeight =1080;
+
 let displayRatio = 0.4;
 let angleOfView = 120;
+*/
 
 
 //Apple facetime camera on M1 macbook pro
-/*
+
 let videoWidth = 640;
 let videoHeight = 480;
 let displayRatio = 0.75;
 let angleOfView = 54;
-*/
+
 
 var fiveMetersDistance;
 var fiveMetersHeight;
