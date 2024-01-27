@@ -23,6 +23,21 @@ int ledLength = 300;  //150 for 5m
 
 Adafruit_NeoPixel strip(ledLength, ledPin, NEO_GRBW + NEO_KHZ800);
 
+int vBreathTop = 100;
+int vCounter = 0;
+bool vDirection = true;
+uint8_t red=  100;
+uint8_t green = 50;
+uint8_t blue = 50;
+
+int degCounter = 0;
+
+
+RTC_TimeTypeDef RTCtime;
+RTC_TimeTypeDef RTCtime_Now;
+char timeStrbuff[64];
+
+//static void HslToRgb(double hue, double saturation, double lightness);
 
 void setup() {
   M5.begin();
@@ -33,9 +48,64 @@ void setup() {
   M5.Lcd.setTextSize(2);
   M5.Lcd.println("OK");
   demo();
+
+  HslToRgb(0.0,0.7,0.3);
+
+  RTCtime.Hours   = 00;  // Set the time.  设置时间
+  RTCtime.Minutes = 00;
+  RTCtime.Seconds = 00;
+
+  RTCtime_Now.Hours   = 00;
+  RTCtime_Now.Minutes = 00;
+  RTCtime_Now.Seconds = 00;
+
+  M5.Rtc.SetTime(&RTCtime_Now);
 }
 
 void loop() {
+
+  if(360<degCounter){
+    degCounter = 0;
+  }
+
+  degCounter+=1;
+
+  if(vBreathTop<vCounter){
+    vDirection = false;
+    vCounter = vBreathTop;
+  }
+
+  if(0>vCounter){
+    vDirection = true;
+    vCounter = 0;
+  }
+
+  //bleathOne(vCounter);
+  //bleathTwo(vCounter,hCounter);
+  //bleathSin(200,degCounter);
+  bleathSin2(200,degCounter);
+
+  if(vDirection){
+      vCounter++;
+  }else{
+      vCounter--;
+  }
+
+  M5.Lcd.setCursor(0, 140);
+  M5.Rtc.GetTime(&RTCtime_Now);  // Gets the current time.  获取当前时间
+  sprintf(timeStrbuff,
+          "RTC Time Now is %02d:%02d:%02d",  // Stores real-time time data to
+                                              // timeStrbuff.
+          // 将实时时间数据存储至timeStrbuff
+          RTCtime_Now.Hours, RTCtime_Now.Minutes, RTCtime_Now.Seconds);
+  M5.Lcd.println(
+      timeStrbuff);  // Screen printing output timeStrbuff.  输出timeStrbuff
+
+  double minuteRatio = RTCtime_Now.Minutes/60.0;
+
+  HslToRgb(minuteRatio,0.7,0.3);
+
+  delay(10);
   
   /*
   unsigned long timeout = millis() + TIMEOUT;
@@ -50,12 +120,6 @@ void loop() {
       }
   }
   */
-
-
-
-  
-
-  //delay(100);
 }
 
 /*
@@ -163,6 +227,11 @@ void showValue(){
   M5.Lcd.setTextSize(2);
   M5.Lcd.println(rLen, DEC);
   
+}
+
+float degToRad(float deg){
+  float rad = (deg * 71) / 4068;
+  return rad;
 }
 
 

@@ -30,9 +30,9 @@ void showLED(){
 }
 
 void demo(){
-  for(int i=0; i<60;i++){
+  for(int i=0; i<ledLength;i++){
 
-    int w=10;
+    int w=60;
 
     uint32_t  c = strip.Color(w,w,w,w);
     strip.setPixelColor(i, c);         //  Set pixel's color (in RAM)
