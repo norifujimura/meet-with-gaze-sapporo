@@ -38,7 +38,6 @@ void loop() {
   // print the string when a newline arrives:
   if (stringComplete) {
     Serial.println(inputString);
-
     M5.Lcd.setTextSize(2);
     M5.Lcd.print(inputString);
     // clear the string:
