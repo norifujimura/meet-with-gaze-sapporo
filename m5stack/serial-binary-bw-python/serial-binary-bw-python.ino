@@ -7,7 +7,7 @@ const int TIMEOUT = 30000;
 uint8_t* bin;
 
 
-const int len = 300;
+const int len = 150;
 int rLen = 0;
 int count = 0;
 //https://qiita.com/hikoalpha/items/c4931230bebdf3c3955b
