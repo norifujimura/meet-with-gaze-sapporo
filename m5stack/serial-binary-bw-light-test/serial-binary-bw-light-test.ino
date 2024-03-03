@@ -6,7 +6,7 @@
 //binary
 uint8_t* bin;
 
-const int len = 1201;
+const int len = 300;
 int rLen = 0;
 int count = 0;
 //https://qiita.com/hikoalpha/items/c4931230bebdf3c3955b
@@ -149,10 +149,12 @@ void showValue(){
     /*
     int x = i;
     */
+    /*
     int x = round(i/4);
     if(x>300){
       x = 300;
     }
+    */
     //M5.Lcd.drawLine(x, 120,x,240,wColor); 
     if(w>0){
       M5.Lcd.fillRect(x-1, 120,4,120, wColor);
