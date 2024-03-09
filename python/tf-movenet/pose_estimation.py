@@ -161,7 +161,7 @@ def main():
       '--model',
       help='Name of estimation model.',
       required=False,
-      default='movenet_multipose')
+      default='movenet_lightning')
   parser.add_argument(
       '--tracker',
       help='Type of tracker to track poses across frames.',
@@ -180,12 +180,12 @@ def main():
       '--frameWidth',
       help='Width of frame to capture from camera.',
       required=False,
-      default=320)
+      default=800)
   parser.add_argument(
       '--frameHeight',
       help='Height of frame to capture from camera.',
       required=False,
-      default=240)
+      default=600)
   args = parser.parse_args()
 
   run(args.model, args.tracker, args.classifier, args.label_file,
