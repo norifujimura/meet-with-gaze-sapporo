@@ -48,6 +48,8 @@ length = 300
 fps_text_location = (10, 50)
 start_time = time.time()
 
+ser = None
+
 try:
     ser = serial.Serial('/dev/tty.wchusbserial54BB0211361', 500000) # No13
     print(ser.portstr)
@@ -73,6 +75,16 @@ except serial.SerialException as e:
                     print(ser.portstr)
                 except serial.SerialException as e:
                     print("SerialError", e)
+                    try:
+                        ser = serial.Serial('/dev/ttyACM0', 500000) # 07
+                        print(ser.portstr)
+                    except serial.SerialException as e:
+                        print("SerialError", e)
+                        try:
+                            ser = serial.Serial('/dev/ttyAMA0', 500000) # 07
+                            print(ser.portstr)
+                        except serial.SerialException as e:
+                            print("SerialError", e)
 
 #last array is for stop char
 data = [0] * (length*4+1) #for RGBW
